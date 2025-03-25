@@ -234,14 +234,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role === UserRole.CUSTOMER) {
         orders = await storage.getUserOrders(req.user.id);
       } else if (req.user.role === UserRole.RESTAURANT_ADMIN) {
+        // Get the restaurant ID from query parameters, if provided
+        const restaurantId = req.query.restaurantId ? Number(req.query.restaurantId) : undefined;
+        
+        // Get all restaurants owned by this admin
         const restaurants = await storage.getRestaurantsByAdmin(req.user.id);
         if (restaurants.length === 0) {
           return res.json([]);
         }
         
-        // For simplicity, just get orders for the first restaurant
-        // In a real app, you might want to get orders for all restaurants or specify a restaurant ID
-        orders = await storage.getRestaurantOrders(restaurants[0].id);
+        // If restaurant ID was provided and user owns it, get orders for that specific restaurant
+        if (restaurantId && restaurants.some(r => r.id === restaurantId)) {
+          orders = await storage.getRestaurantOrders(restaurantId);
+        }
+        // Otherwise, get orders for the first restaurant
+        else {
+          orders = await storage.getRestaurantOrders(restaurants[0].id);
+        }
       } else if (req.user.role === UserRole.DELIVERY_PARTNER) {
         orders = await storage.getDeliveryPartnerOrders(req.user.id);
       } else {

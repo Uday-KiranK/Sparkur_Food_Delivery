@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { Restaurant, Order, OrderStatus, UserRole } from "@shared/schema";
 import { useLocation } from "wouter";
@@ -39,18 +40,38 @@ const RestaurantDashboard = () => {
     }
   }, [user, navigate]);
 
-  // Fetch restaurant info
+  // Get restaurant ID from URL (if any)
+  const [, params] = useLocation();
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedRestaurantId = urlParams.get('restaurantId') ? Number(urlParams.get('restaurantId')) : undefined;
+  
+  // Fetch restaurants owned by this admin
   const { data: restaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants"],
     enabled: !!user && user.role === UserRole.RESTAURANT_ADMIN,
   });
 
-  const restaurant = restaurants?.[0];
+  // Select active restaurant (from URL param or first available)
+  const [activeRestaurantId, setActiveRestaurantId] = useState<number | undefined>(selectedRestaurantId);
+  
+  useEffect(() => {
+    // If we have restaurants but no active restaurant selected, select the first one
+    if (restaurants?.length && !activeRestaurantId) {
+      setActiveRestaurantId(restaurants[0].id);
+    }
+  }, [restaurants, activeRestaurantId]);
+  
+  const restaurant = restaurants?.find(r => r.id === activeRestaurantId);
 
-  // Fetch restaurant orders
+  // Fetch restaurant orders - use the selected restaurant ID in query
   const { data: orders, isLoading: isOrdersLoading } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
-    enabled: !!restaurant,
+    queryKey: ["/api/orders", activeRestaurantId],
+    queryFn: async () => {
+      const res = await fetch(`/api/orders?restaurantId=${activeRestaurantId}`);
+      if (!res.ok) throw new Error("Failed to fetch orders");
+      return res.json();
+    },
+    enabled: !!restaurant && !!activeRestaurantId,
   });
 
   const restaurantForm = useForm<UpdateRestaurantForm>({
@@ -117,7 +138,7 @@ const RestaurantDashboard = () => {
         title: "Success",
         description: "Order status updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders", activeRestaurantId] });
       setSelectedOrder(null);
     },
     onError: (error: Error) => {
@@ -153,7 +174,8 @@ const RestaurantDashboard = () => {
   ) || [];
 
   // Helper function to format date
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "N/A";
     const date = new Date(dateStr);
     return date.toLocaleDateString() + " at " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -202,6 +224,24 @@ const RestaurantDashboard = () => {
               <div>
                 <h1 className="text-2xl font-bold">{restaurant.name}</h1>
                 <p className="text-[#686b78]">{restaurant.address}</p>
+                
+                {/* Add restaurant selector when there are multiple restaurants */}
+                {restaurants && restaurants.length > 1 && (
+                  <div className="mt-2">
+                    <Select onValueChange={(value) => setActiveRestaurantId(Number(value))}>
+                      <SelectTrigger className="w-full md:w-[300px]">
+                        <SelectValue placeholder="Select restaurant" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {restaurants.map((r) => (
+                          <SelectItem key={r.id} value={r.id.toString()}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
               
               <div className="flex space-x-4">
