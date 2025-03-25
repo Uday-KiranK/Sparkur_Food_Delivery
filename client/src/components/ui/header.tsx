@@ -5,6 +5,16 @@ import { useCart } from "@/hooks/use-cart";
 import { UserRole } from "@shared/schema";
 import CartDropdown from "../cart-dropdown";
 import LoginDropdown from "../login-dropdown";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const Header = () => {
   const [location] = useLocation();
