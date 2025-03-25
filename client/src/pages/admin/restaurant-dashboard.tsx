@@ -312,7 +312,10 @@ const RestaurantDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {JSON.parse(selectedOrder.items as unknown as string).map((item: any) => (
+                        {(typeof selectedOrder.items === 'string' 
+                          ? JSON.parse(selectedOrder.items) 
+                          : selectedOrder.items
+                        ).map((item: any) => (
                           <tr key={item.id} className="border-t">
                             <td className="px-4 py-2">{item.name}</td>
                             <td className="px-4 py-2 text-center">{item.quantity}</td>

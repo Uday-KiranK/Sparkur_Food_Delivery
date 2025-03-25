@@ -53,19 +53,19 @@ const DeliveryDashboard = () => {
 
   // Filter orders by status
   const availableOrders = orders?.filter(order => 
-    order.status === OrderStatus.READY_FOR_PICKUP
+    order.status === OrderStatus.READY_FOR_PICKUP || 
+    (order.delivery_partner_id === user?.id && 
+     [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED].includes(order.status as any))
   ) || [];
 
-  const myDeliveries = orders?.filter(order => 
-    order.status === OrderStatus.OUT_FOR_DELIVERY && order.delivery_partner_id === user?.id
-  ) || [];
-
-  const completedDeliveries = orders?.filter(order => 
-    order.status === OrderStatus.DELIVERED && order.delivery_partner_id === user?.id
-  ) || [];
+  // Get completed deliveries for earnings calculation
+  const completedOrders = availableOrders.filter(
+    order => order.status === OrderStatus.DELIVERED && order.delivery_partner_id === user?.id
+  );
 
   // Helper function to format date
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | undefined | null) => {
+    if (!dateStr) return "N/A";
     const date = new Date(dateStr);
     return date.toLocaleDateString() + " at " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -117,7 +117,7 @@ const DeliveryDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <h3 className="font-bold mb-2">Order Information</h3>
-                  <p><span className="text-[#686b78]">Order Date:</span> {formatDate(selectedOrder.order_time.toString())}</p>
+                  <p><span className="text-[#686b78]">Order Date:</span> {formatDate(selectedOrder.order_time?.toString())}</p>
                   <p><span className="text-[#686b78]">Current Status:</span> {selectedOrder.status}</p>
                   <p><span className="text-[#686b78]">Delivery Address:</span> {selectedOrder.delivery_address}</p>
                   <p><span className="text-[#686b78]">Total Amount:</span> ₹{selectedOrder.total_amount}</p>
@@ -143,7 +143,10 @@ const DeliveryDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {JSON.parse(selectedOrder.items as unknown as string).map((item: any, index: number) => (
+                    {(typeof selectedOrder.items === 'string'
+                      ? JSON.parse(selectedOrder.items)
+                      : selectedOrder.items
+                    ).map((item: any, index: number) => (
                       <tr key={index} className="border-t">
                         <td className="px-4 py-2">{item.name}</td>
                         <td className="px-4 py-2 text-center">{item.quantity}</td>
@@ -195,11 +198,11 @@ const DeliveryDashboard = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Available Orders */}
+            <div className="grid grid-cols-1 gap-6">
+              {/* My Deliveries */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-lg font-bold mb-4 flex items-center">
-                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span> Available Orders
+                  <span className="w-3 h-3 bg-[#FC8019] rounded-full mr-2"></span> My Deliveries
                 </h2>
                 
                 {isOrdersLoading ? (
@@ -216,13 +219,19 @@ const DeliveryDashboard = () => {
                       >
                         <div className="flex justify-between items-start mb-2">
                           <p className="font-bold">Order #{order.id}</p>
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                            Ready for Pickup
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            order.status === OrderStatus.READY_FOR_PICKUP 
+                              ? "bg-green-100 text-green-800"
+                              : order.status === OrderStatus.OUT_FOR_DELIVERY
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-blue-100 text-blue-800"
+                          }`}>
+                            {order.status}
                           </span>
                         </div>
                         <p className="text-sm mb-2 line-clamp-1">{order.delivery_address}</p>
                         <div className="flex justify-between items-center">
-                          <p className="text-sm text-[#686b78]">{formatDate(order.order_time.toString())}</p>
+                          <p className="text-sm text-[#686b78]">{formatDate(order.order_time?.toString())}</p>
                           <p className="text-sm font-medium">₹{order.total_amount}</p>
                         </div>
                       </div>
@@ -230,93 +239,7 @@ const DeliveryDashboard = () => {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-[#686b78]">
-                    No orders available for pickup
-                  </div>
-                )}
-              </div>
-              
-              {/* Active Deliveries */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-bold mb-4 flex items-center">
-                  <span className="w-3 h-3 bg-[#FC8019] rounded-full mr-2"></span> My Active Deliveries
-                </h2>
-                
-                {isOrdersLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
-                  </div>
-                ) : myDeliveries.length > 0 ? (
-                  <div className="space-y-4">
-                    {myDeliveries.map((order) => (
-                      <div 
-                        key={order.id} 
-                        className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-[#FC8019] transition-colors"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="font-bold">Order #{order.id}</p>
-                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                            Out for Delivery
-                          </span>
-                        </div>
-                        <p className="text-sm mb-2 line-clamp-1">{order.delivery_address}</p>
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm text-[#686b78]">{formatDate(order.order_time.toString())}</p>
-                          <p className="text-sm font-medium">₹{order.total_amount}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-[#686b78]">
-                    No active deliveries
-                  </div>
-                )}
-              </div>
-              
-              {/* Completed Deliveries */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-bold mb-4 flex items-center">
-                  <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span> Delivery History
-                </h2>
-                
-                {isOrdersLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
-                  </div>
-                ) : completedDeliveries.length > 0 ? (
-                  <div className="space-y-4">
-                    {completedDeliveries.slice(0, 5).map((order) => (
-                      <div 
-                        key={order.id} 
-                        className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-[#FC8019] transition-colors"
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="font-bold">Order #{order.id}</p>
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                            Delivered
-                          </span>
-                        </div>
-                        <p className="text-sm mb-2 line-clamp-1">{order.delivery_address}</p>
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm text-[#686b78]">{formatDate(order.order_time.toString())}</p>
-                          <p className="text-sm font-medium">₹{order.total_amount}</p>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {completedDeliveries.length > 5 && (
-                      <div className="text-center pt-2">
-                        <button className="text-[#FC8019] hover:text-[#e67016] text-sm font-medium">
-                          View All History
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-[#686b78]">
-                    No delivery history
+                    No orders available
                   </div>
                 )}
               </div>
@@ -330,44 +253,52 @@ const DeliveryDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-[#686b78] mb-1">Today's Earnings</h3>
-                <p className="text-2xl font-bold">₹{completedDeliveries.filter(o => {
-                  const today = new Date();
-                  const orderDate = new Date(o.delivery_time as Date);
-                  return orderDate.toDateString() === today.toDateString();
-                }).reduce((sum, o) => sum + Math.round(o.total_amount * 0.1), 0)}</p>
-                <p className="text-sm text-[#686b78]">
-                  {completedDeliveries.filter(o => {
+                <p className="text-2xl font-bold">₹{
+                  completedOrders.filter(order => {
                     const today = new Date();
-                    const orderDate = new Date(o.delivery_time as Date);
-                    return orderDate.toDateString() === today.toDateString();
+                    const deliveryDate = order.delivery_time ? new Date(order.delivery_time) : null;
+                    return deliveryDate && deliveryDate.toDateString() === today.toDateString();
+                  }).reduce((sum, order) => sum + Math.round(order.total_amount * 0.1), 0)
+                }</p>
+                <p className="text-sm text-[#686b78]">
+                  {completedOrders.filter(order => {
+                    const today = new Date();
+                    const deliveryDate = order.delivery_time ? new Date(order.delivery_time) : null;
+                    return deliveryDate && deliveryDate.toDateString() === today.toDateString();
                   }).length} Deliveries
                 </p>
               </div>
               
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-[#686b78] mb-1">This Week</h3>
-                <p className="text-2xl font-bold">₹{completedDeliveries.filter(o => {
-                  const now = new Date();
-                  const orderDate = new Date(o.delivery_time as Date);
-                  const weekStart = new Date(now);
-                  weekStart.setDate(now.getDate() - now.getDay());
-                  return orderDate >= weekStart;
-                }).reduce((sum, o) => sum + Math.round(o.total_amount * 0.1), 0)}</p>
-                <p className="text-sm text-[#686b78]">
-                  {completedDeliveries.filter(o => {
+                <p className="text-2xl font-bold">₹{
+                  completedOrders.filter(order => {
+                    if (!order.delivery_time) return false;
                     const now = new Date();
-                    const orderDate = new Date(o.delivery_time as Date);
+                    const deliveryDate = new Date(order.delivery_time);
                     const weekStart = new Date(now);
                     weekStart.setDate(now.getDate() - now.getDay());
-                    return orderDate >= weekStart;
+                    return deliveryDate >= weekStart;
+                  }).reduce((sum, order) => sum + Math.round(order.total_amount * 0.1), 0)
+                }</p>
+                <p className="text-sm text-[#686b78]">
+                  {completedOrders.filter(order => {
+                    if (!order.delivery_time) return false;
+                    const now = new Date();
+                    const deliveryDate = new Date(order.delivery_time);
+                    const weekStart = new Date(now);
+                    weekStart.setDate(now.getDate() - now.getDay());
+                    return deliveryDate >= weekStart;
                   }).length} Deliveries
                 </p>
               </div>
               
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-[#686b78] mb-1">Total Earnings</h3>
-                <p className="text-2xl font-bold">₹{completedDeliveries.reduce((sum, o) => sum + Math.round(o.total_amount * 0.1), 0)}</p>
-                <p className="text-sm text-[#686b78]">{completedDeliveries.length} Deliveries</p>
+                <p className="text-2xl font-bold">₹{
+                  completedOrders.reduce((sum, order) => sum + Math.round(order.total_amount * 0.1), 0)
+                }</p>
+                <p className="text-sm text-[#686b78]">{completedOrders.length} Deliveries</p>
               </div>
             </div>
           </div>
