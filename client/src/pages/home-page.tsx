@@ -43,30 +43,64 @@ const HomePage = () => {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-[#f2f2f2] py-8 md:py-12 relative">
-        <div className="container mx-auto px-4">
+      <section className="bg-gradient-to-r from-[#f2f2f2] to-[#fef2e8] py-10 md:py-16 relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-xl">
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">Hungry? We've Got You Covered</h1>
-            <p className="text-[#686b78] mb-6 md:text-lg">Order food from favorite restaurants near you</p>
-            <div className="flex flex-col sm:flex-row">
-              <input 
-                type="text" 
-                placeholder="Enter your delivery location" 
-                className="px-4 py-3 rounded-md border border-gray-300 mb-3 sm:mb-0 sm:mr-3 focus:outline-none focus:ring-1 focus:ring-[#FC8019] w-full"
-              />
-              <button className="bg-[#FC8019] text-white px-6 py-3 rounded-md font-medium hover:bg-[#e67016] transition-colors">
+            <h1 className="text-3xl md:text-5xl font-bold mb-3 text-[#3d4152]">
+              <span className="text-[#FC8019]">Delicious</span> food, delivered fast
+            </h1>
+            <p className="text-[#686b78] mb-8 md:text-lg">Order from the best local restaurants with easy, on-demand delivery</p>
+            <div className="flex flex-col sm:flex-row mb-4">
+              <div className="relative flex-grow mb-3 sm:mb-0 sm:mr-3">
+                <i className="bi bi-geo-alt absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input 
+                  type="text" 
+                  placeholder="Enter your delivery location" 
+                  className="px-4 py-3 pl-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FC8019] w-full shadow-sm"
+                />
+              </div>
+              <button className="bg-[#FC8019] text-white px-8 py-3 rounded-md font-medium hover:bg-[#e67016] transition-colors shadow-md flex items-center justify-center">
+                <i className="bi bi-search mr-2"></i>
                 Find Food
               </button>
             </div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="bg-white px-3 py-1 rounded-full text-sm text-[#686b78] shadow-sm">Bangalore</span>
+              <span className="bg-white px-3 py-1 rounded-full text-sm text-[#686b78] shadow-sm">Mumbai</span>
+              <span className="bg-white px-3 py-1 rounded-full text-sm text-[#686b78] shadow-sm">Delhi</span>
+              <span className="bg-white px-3 py-1 rounded-full text-sm text-[#686b78] shadow-sm">Chennai</span>
+            </div>
           </div>
         </div>
-        <div className="hidden md:block absolute right-0 bottom-0 w-1/3 h-full">
-          <svg className="h-full w-full" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="#f8f8f8" />
-            <path d="M50,250 C50,150 150,50 250,50 C350,50 450,150 450,250 C450,350 350,450 250,450 C150,450 50,350 50,250 Z" fill="#FEF2E8" />
-            <path d="M100,250 C100,180 180,100 250,100 C320,100 400,180 400,250 C400,320 320,400 250,400 C180,400 100,320 100,250 Z" fill="#FFDCB8" />
-            <path d="M150,250 C150,210 210,150 250,150 C290,150 350,210 350,250 C350,290 290,350 250,350 C210,350 150,290 150,250 Z" fill="#FC8019" />
-          </svg>
+        
+        {/* Decorative food images */}
+        <div className="hidden md:block absolute right-0 top-0 w-1/2 h-full">
+          <div className="relative h-full w-full">
+            {/* Food image collage */}
+            <div className="absolute top-[10%] right-[15%] w-48 h-48 rounded-full bg-white p-2 shadow-lg transform rotate-6">
+              <div className="w-full h-full rounded-full bg-cover bg-center" 
+                   style={{backgroundImage: "url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300&auto=format&fit=crop')"}}></div>
+            </div>
+            <div className="absolute top-[35%] right-[5%] w-32 h-32 rounded-full bg-white p-2 shadow-lg transform -rotate-3">
+              <div className="w-full h-full rounded-full bg-cover bg-center" 
+                   style={{backgroundImage: "url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=300&auto=format&fit=crop')"}}></div>
+            </div>
+            <div className="absolute top-[55%] right-[20%] w-40 h-40 rounded-full bg-white p-2 shadow-lg transform rotate-12">
+              <div className="w-full h-full rounded-full bg-cover bg-center" 
+                   style={{backgroundImage: "url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=300&auto=format&fit=crop')"}}></div>
+            </div>
+            
+            {/* Decorative elements */}
+            <div className="absolute top-[20%] right-[40%] w-12 h-12 bg-[#FC8019] rounded-full opacity-20"></div>
+            <div className="absolute top-[60%] right-[40%] w-20 h-20 bg-[#FC8019] rounded-full opacity-10"></div>
+            <div className="absolute top-[80%] right-[10%] w-16 h-16 bg-[#FC8019] rounded-full opacity-15"></div>
+          </div>
+        </div>
+        
+        {/* Mobile decoration */}
+        <div className="md:hidden absolute bottom-0 right-0 w-full h-24 overflow-hidden">
+          <div className="w-40 h-40 bg-[#FFDCB8] rounded-full absolute -bottom-20 -right-20 opacity-50"></div>
+          <div className="w-24 h-24 bg-[#FC8019] rounded-full absolute -bottom-10 right-10 opacity-20"></div>
         </div>
       </section>
 

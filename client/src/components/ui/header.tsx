@@ -17,15 +17,27 @@ const Header = () => {
   
   const loginDropdownRef = useRef<HTMLDivElement>(null);
   const cartDropdownRef = useRef<HTMLDivElement>(null);
+  const loginButtonRef = useRef<HTMLButtonElement>(null); 
+  const cartButtonRef = useRef<HTMLButtonElement>(null);
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (loginDropdownRef.current && !loginDropdownRef.current.contains(event.target as Node)) {
+      // For login dropdown
+      if (loginDropdownOpen && 
+          loginDropdownRef.current && 
+          !loginDropdownRef.current.contains(event.target as Node) &&
+          loginButtonRef.current && 
+          !loginButtonRef.current.contains(event.target as Node)) {
         setLoginDropdownOpen(false);
       }
       
-      if (cartDropdownRef.current && !cartDropdownRef.current.contains(event.target as Node)) {
+      // For cart dropdown
+      if (cartDropdownOpen && 
+          cartDropdownRef.current && 
+          !cartDropdownRef.current.contains(event.target as Node) &&
+          cartButtonRef.current && 
+          !cartButtonRef.current.contains(event.target as Node)) {
         setCartDropdownOpen(false);
       }
     };
@@ -34,11 +46,11 @@ const Header = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [loginDropdownOpen, cartDropdownOpen]);
 
   // Get user role-specific dashboard link
   const getDashboardLink = () => {
-    if (!user) return null;
+    if (!user) return "/profile";
     
     switch (user.role) {
       case UserRole.RESTAURANT_ADMIN:
@@ -122,6 +134,7 @@ const Header = () => {
                 </Link>
               ) : (
                 <button 
+                  ref={loginButtonRef}
                   className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors"
                   onClick={() => {
                     setLoginDropdownOpen(!loginDropdownOpen);
@@ -141,6 +154,7 @@ const Header = () => {
             {/* Cart Button with Dropdown */}
             <div className="relative" ref={cartDropdownRef}>
               <button 
+                ref={cartButtonRef}
                 className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors"
                 onClick={() => {
                   setCartDropdownOpen(!cartDropdownOpen);
