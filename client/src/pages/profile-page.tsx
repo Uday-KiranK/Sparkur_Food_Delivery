@@ -180,9 +180,14 @@ const ProfilePage = () => {
                       {orders.map((order) => {
                         const { text: statusText, color: statusColor } = getStatusText(order.status);
                         // Handle different types of order.items (string or already parsed object)
-                        const orderItems = typeof order.items === 'string' 
-                          ? JSON.parse(order.items) 
-                          : order.items;
+                        let orderItems = [];
+                        try {
+                          orderItems = typeof order.items === 'string' 
+                            ? JSON.parse(order.items) 
+                            : order.items || [];
+                        } catch (error) {
+                          console.error("Error parsing order items:", error);
+                        }
                         return (
                           <div key={order.id} className="border border-gray-200 rounded-lg p-4">
                             <div className="flex justify-between items-start mb-4">

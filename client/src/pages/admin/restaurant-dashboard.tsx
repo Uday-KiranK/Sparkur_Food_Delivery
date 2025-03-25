@@ -312,10 +312,17 @@ const RestaurantDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {(typeof selectedOrder.items === 'string' 
-                          ? JSON.parse(selectedOrder.items) 
-                          : selectedOrder.items
-                        ).map((item: any) => (
+                        {(() => {
+                          let orderItems = [];
+                          try {
+                            orderItems = typeof selectedOrder.items === 'string' 
+                              ? JSON.parse(selectedOrder.items) 
+                              : selectedOrder.items || [];
+                          } catch (error) {
+                            console.error("Error parsing order items:", error);
+                          }
+                          return orderItems;
+                        })().map((item: any) => (
                           <tr key={item.id} className="border-t">
                             <td className="px-4 py-2">{item.name}</td>
                             <td className="px-4 py-2 text-center">{item.quantity}</td>
