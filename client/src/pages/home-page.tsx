@@ -4,7 +4,7 @@ import Footer from "@/components/ui/footer";
 import RestaurantCard from "@/components/restaurant-card";
 import CategoryCard from "@/components/category-card";
 import { Restaurant, FoodCategory } from "@shared/schema";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 
 const HomePage = () => {
@@ -29,6 +29,22 @@ const HomePage = () => {
       { veg: filterVeg, rating: filterRating ? 4.0 : undefined }
     ],
   });
+  
+  // Process restaurants for fast delivery filter
+  const filteredRestaurants = useMemo(() => {
+    if (!allRestaurants) return [];
+    
+    let restaurants = [...allRestaurants];
+    
+    // Apply fastest delivery filter if enabled
+    if (filterFastDelivery) {
+      restaurants = restaurants.sort((a, b) => {
+        return (a.delivery_time || 30) - (b.delivery_time || 30);
+      }).slice(0, 10); // Show only the 10 fastest restaurants
+    }
+    
+    return restaurants;
+  }, [allRestaurants, filterFastDelivery]);
 
   // Generate query params for filtered API calls
   const getFilterQueryParams = () => {
@@ -222,10 +238,18 @@ const HomePage = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                {allRestaurants?.map((restaurant) => (
+                {filteredRestaurants.map((restaurant) => (
                   <RestaurantCard key={restaurant.id} restaurant={restaurant} />
                 ))}
               </div>
+              
+              {filteredRestaurants.length === 0 && (
+                <div className="text-center py-10">
+                  <i className="bi bi-emoji-frown text-5xl text-gray-400 mb-4"></i>
+                  <h3 className="text-xl font-bold mb-2">No restaurants found</h3>
+                  <p className="text-[#686b78] mb-4">Try changing your filters to see more options.</p>
+                </div>
+              )}
 
               <div className="text-center mt-10">
                 <button className="px-6 py-2 border border-[#FC8019] text-[#FC8019] rounded-md hover:bg-[#FC8019] hover:text-white transition-colors">

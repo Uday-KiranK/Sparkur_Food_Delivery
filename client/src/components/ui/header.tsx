@@ -58,6 +58,12 @@ const Header = () => {
     };
   }, [loginDropdownOpen, cartDropdownOpen]);
 
+  // State for dialog controls
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [offersOpen, setOffersOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Get user role-specific dashboard link
   const getDashboardLink = () => {
     if (!user) return "/profile";
@@ -99,22 +105,165 @@ const Header = () => {
           <nav className="hidden md:block flex-grow ml-10">
             <ul className="flex space-x-6">
               <li>
-                <Link href="/" className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors">
-                  <i className="bi bi-search mr-2"></i>
-                  <span>Search</span>
-                </Link>
+                <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+                  <DialogTrigger asChild>
+                    <button className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors">
+                      <i className="bi bi-search mr-2"></i>
+                      <span>Search</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Search Restaurants & Food</DialogTitle>
+                      <DialogDescription>
+                        Find your favorite restaurants and dishes
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 py-4">
+                      <div className="flex gap-2">
+                        <Input 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search for restaurants, dishes or cuisines..."
+                          className="flex-1"
+                        />
+                        <button className="bg-[#FC8019] text-white px-4 py-2 rounded-md flex items-center">
+                          <i className="bi bi-search mr-2"></i>
+                          Search
+                        </button>
+                      </div>
+                      <div className="mt-2">
+                        <h3 className="text-sm font-medium text-gray-500 mb-2">Popular Searches:</h3>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Pizza</span>
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Burger</span>
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Chinese</span>
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Biryani</span>
+                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Ice Cream</span>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </li>
               <li>
-                <Link href="/" className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors">
-                  <i className="bi bi-percent mr-2"></i>
-                  <span>Offers</span>
-                </Link>
+                <Dialog open={offersOpen} onOpenChange={setOffersOpen}>
+                  <DialogTrigger asChild>
+                    <button className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors">
+                      <i className="bi bi-percent mr-2"></i>
+                      <span>Offers</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Current Offers</DialogTitle>
+                      <DialogDescription>
+                        Amazing deals and discounts just for you
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="bg-[#FC8019] h-10 w-10 rounded-full flex items-center justify-center text-white">
+                              <i className="bi bi-currency-rupee"></i>
+                            </div>
+                            <div className="ml-3">
+                              <h3 className="font-bold">WELCOME50</h3>
+                              <p className="text-sm text-gray-500">50% off up to ₹100</p>
+                            </div>
+                          </div>
+                          <button className="text-[#FC8019] border border-[#FC8019] rounded-md px-3 py-1 text-sm hover:bg-[#fff3e9]">
+                            COPY
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Valid on orders above ₹199. Only for new users.</p>
+                      </div>
+                      
+                      <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="bg-[#FC8019] h-10 w-10 rounded-full flex items-center justify-center text-white">
+                              <i className="bi bi-bag-fill"></i>
+                            </div>
+                            <div className="ml-3">
+                              <h3 className="font-bold">FREEDEL</h3>
+                              <p className="text-sm text-gray-500">Free Delivery</p>
+                            </div>
+                          </div>
+                          <button className="text-[#FC8019] border border-[#FC8019] rounded-md px-3 py-1 text-sm hover:bg-[#fff3e9]">
+                            COPY
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Valid on orders above ₹249.</p>
+                      </div>
+                      
+                      <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="bg-[#FC8019] h-10 w-10 rounded-full flex items-center justify-center text-white">
+                              <i className="bi bi-card-list"></i>
+                            </div>
+                            <div className="ml-3">
+                              <h3 className="font-bold">JUMBO</h3>
+                              <p className="text-sm text-gray-500">20% off up to ₹150</p>
+                            </div>
+                          </div>
+                          <button className="text-[#FC8019] border border-[#FC8019] rounded-md px-3 py-1 text-sm hover:bg-[#fff3e9]">
+                            COPY
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Valid on orders above ₹499.</p>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </li>
               <li>
-                <Link href="/" className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors">
-                  <i className="bi bi-question-circle mr-2"></i>
-                  <span>Help</span>
-                </Link>
+                <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+                  <DialogTrigger asChild>
+                    <button className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors">
+                      <i className="bi bi-question-circle mr-2"></i>
+                      <span>Help</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Help & Support</DialogTitle>
+                      <DialogDescription>
+                        Frequently asked questions and support
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <div className="space-y-4">
+                        <div className="border-b pb-3">
+                          <h3 className="font-medium mb-1">How do I track my order?</h3>
+                          <p className="text-sm text-gray-600">You can track your order in real-time by going to the 'Orders' section in your profile. You'll see the current status and live location of your delivery partner.</p>
+                        </div>
+                        
+                        <div className="border-b pb-3">
+                          <h3 className="font-medium mb-1">What if I want to cancel my order?</h3>
+                          <p className="text-sm text-gray-600">You can cancel your order from the 'Orders' section if it's still in the 'Pending' status. Once the restaurant has accepted your order, you'll need to contact customer support.</p>
+                        </div>
+                        
+                        <div className="border-b pb-3">
+                          <h3 className="font-medium mb-1">How do I get a refund?</h3>
+                          <p className="text-sm text-gray-600">Refunds are automatically processed if your order is cancelled. For other issues like missing items or quality concerns, please raise a help ticket from the order details page.</p>
+                        </div>
+                        
+                        <div className="border-b pb-3">
+                          <h3 className="font-medium mb-1">Can I change my delivery address?</h3>
+                          <p className="text-sm text-gray-600">You can update your delivery address before placing the order. Once the order is placed, the address cannot be changed.</p>
+                        </div>
+                        
+                        <div>
+                          <h3 className="font-medium mb-1">How do I contact customer support?</h3>
+                          <p className="text-sm text-gray-600">You can reach our customer support team 24/7 via email at support@sparkur.com or call us at +91-80XXXXXXXX.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </li>
               {user && (
                 <li>
@@ -212,34 +361,40 @@ const Header = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  href="/" 
-                  className="flex items-center py-2 hover:text-[#FC8019] transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  className="flex items-center py-2 hover:text-[#FC8019] transition-colors w-full text-left"
+                  onClick={() => {
+                    setSearchOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
                 >
                   <i className="bi bi-search mr-2"></i>
                   <span>Search</span>
-                </Link>
+                </button>
               </li>
               <li>
-                <Link 
-                  href="/" 
-                  className="flex items-center py-2 hover:text-[#FC8019] transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  className="flex items-center py-2 hover:text-[#FC8019] transition-colors w-full text-left"
+                  onClick={() => {
+                    setOffersOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
                 >
                   <i className="bi bi-percent mr-2"></i>
                   <span>Offers</span>
-                </Link>
+                </button>
               </li>
               <li>
-                <Link 
-                  href="/" 
-                  className="flex items-center py-2 hover:text-[#FC8019] transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  className="flex items-center py-2 hover:text-[#FC8019] transition-colors w-full text-left"
+                  onClick={() => {
+                    setHelpOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
                 >
                   <i className="bi bi-question-circle mr-2"></i>
                   <span>Help</span>
-                </Link>
+                </button>
               </li>
               {user && (
                 <li>

@@ -188,7 +188,7 @@ const ProfilePage = () => {
                             <div className="flex justify-between items-start mb-4">
                               <div>
                                 <p className="text-lg font-bold">Order #{order.id}</p>
-                                <p className="text-sm text-[#686b78]">{formatDate(order.order_time.toString())}</p>
+                                <p className="text-sm text-[#686b78]">{order.order_time ? formatDate(order.order_time.toString()) : "Processing"}</p>
                               </div>
                               <span className={`px-2 py-1 rounded-full text-sm ${statusColor} bg-opacity-10`}>
                                 {statusText}
