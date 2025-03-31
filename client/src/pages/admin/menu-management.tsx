@@ -132,6 +132,7 @@ const MenuManagement = () => {
   const createMenuItemMutation = useMutation({
     mutationFn: async (data: MenuItemForm) => {
       if (!restaurant) throw new Error("No restaurant data available");
+      console.log("Creating menu item with data:", data);
       const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/menu`, data);
       return await res.json();
     },
@@ -145,6 +146,7 @@ const MenuManagement = () => {
       setShowAddItem(false);
     },
     onError: (error: Error) => {
+      console.error("Menu item creation error:", error);
       toast({
         title: "Error",
         description: `Failed to add menu item: ${error.message}`,
