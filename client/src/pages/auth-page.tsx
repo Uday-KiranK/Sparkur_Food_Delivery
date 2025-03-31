@@ -18,6 +18,7 @@ const loginSchema = z.object({
 const registerSchema = insertUserSchema
   .extend({
     confirmPassword: z.string(),
+    email: z.string().email("Please enter a valid email address"),
   })
   .refine(data => data.password === data.confirmPassword, {
     message: "Passwords don't match",

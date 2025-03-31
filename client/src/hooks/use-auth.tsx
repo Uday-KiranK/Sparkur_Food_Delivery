@@ -35,8 +35,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/login", credentials);
+        
+        // Handle authentication errors from the server (status 401)
+        if (res.status === 401) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Invalid username or password");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("Login failed. Please try again.");
+      }
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -49,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     },
@@ -57,8 +71,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/register", credentials);
+        
+        // Handle validation errors from the server (status 400)
+        if (res.status === 400) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Registration failed. Please try again.");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("Registration failed. Please try again.");
+      }
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -71,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "Please check your information and try again.",
         variant: "destructive",
       });
     },
