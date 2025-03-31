@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import AddRestaurantForm from "@/components/add-restaurant-form";
+import RestaurantSelectorModal from "@/components/restaurant-selector-modal";
 
 const updateRestaurantSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -34,6 +35,7 @@ const RestaurantDashboard = () => {
   const [activeTab, setActiveTab] = useState<"orders" | "info">("orders");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showAddRestaurantForm, setShowAddRestaurantForm] = useState(false);
+  const [showRestaurantSelector, setShowRestaurantSelector] = useState(false);
 
   // Redirect if not a restaurant admin
   useEffect(() => {
@@ -235,6 +237,18 @@ const RestaurantDashboard = () => {
       
       <div className="flex-grow bg-[#f2f2f2] py-8">
         <div className="container mx-auto px-4">
+          {/* Restaurant selector modal */}
+          {showRestaurantSelector && restaurants && (
+            <RestaurantSelectorModal
+              restaurants={restaurants}
+              onSelect={(restaurantId) => {
+                setShowRestaurantSelector(false);
+                navigate(`/admin/menu?restaurantId=${restaurantId}`);
+              }}
+              onClose={() => setShowRestaurantSelector(false)}
+            />
+          )}
+          
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
@@ -275,7 +289,15 @@ const RestaurantDashboard = () => {
                 </button>
                 <button 
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
-                  onClick={() => navigate("/admin/menu")}
+                  onClick={() => {
+                    // If there's only one restaurant, go directly to the menu page
+                    if (restaurants && restaurants.length === 1) {
+                      navigate(`/admin/menu?restaurantId=${restaurant.id}`);
+                    } else {
+                      // Otherwise, show the restaurant selector modal
+                      setShowRestaurantSelector(true);
+                    }
+                  }}
                 >
                   Menu Management
                 </button>

@@ -38,13 +38,20 @@ const MenuManagement = () => {
     }
   }, [user, navigate]);
 
+  // Get restaurant ID from URL (if any)
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedRestaurantId = urlParams.get('restaurantId') ? Number(urlParams.get('restaurantId')) : undefined;
+
   // Fetch restaurant info
   const { data: restaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants"],
     enabled: !!user && user.role === UserRole.RESTAURANT_ADMIN,
   });
 
-  const restaurant = restaurants?.[0];
+  // Select the restaurant from URL param or first available
+  const restaurant = selectedRestaurantId 
+    ? restaurants?.find(r => r.id === selectedRestaurantId) 
+    : restaurants?.[0];
 
   // Fetch menu categories
   const { data: categories, isLoading: isCategoriesLoading } = useQuery<Category[]>({
@@ -80,7 +87,7 @@ const MenuManagement = () => {
       is_available: true,
       image_url: "",
       category_id: undefined,
-      restaurant_id: restaurant?.id,
+      restaurant_id: undefined,
     },
   });
 
@@ -90,13 +97,22 @@ const MenuManagement = () => {
     handleSubmit: handleSubmitCategory,
     formState: { errors: categoryErrors },
     reset: resetCategory,
+    setValue: setCategoryValue,
   } = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
-      restaurant_id: restaurant?.id,
+      restaurant_id: undefined,
     },
   });
+  
+  // Update restaurant_id in forms when restaurant changes
+  useEffect(() => {
+    if (restaurant) {
+      setMenuItemValue("restaurant_id", restaurant.id);
+      setCategoryValue("restaurant_id", restaurant.id);
+    }
+  }, [restaurant, setMenuItemValue, setCategoryValue]);
 
   // Update form when editing an item
   useEffect(() => {
