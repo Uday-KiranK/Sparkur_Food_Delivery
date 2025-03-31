@@ -115,4 +115,28 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+  
+  app.patch("/api/user/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+      
+      // Only allow users to update their own profile
+      const userId = parseInt(req.params.id);
+      if (req.user?.id !== userId) {
+        return res.status(403).json({ message: "Forbidden: You can only update your own profile" });
+      }
+      
+      // Prevent updating password or role through this endpoint
+      const { password, role, ...updateData } = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
 }
