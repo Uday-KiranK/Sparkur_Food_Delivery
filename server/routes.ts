@@ -40,12 +40,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filters = {
         category: req.query.category as string | undefined,
         veg: req.query.veg === "true" ? true : undefined,
-        rating: req.query.rating ? Number(req.query.rating) : undefined
+        rating: req.query.rating ? Number(req.query.rating) : undefined,
+        search: req.query.search as string | undefined
       };
       
       const restaurants = await storage.getRestaurants(filters);
       res.json(restaurants);
     } catch (error) {
+      console.error("Error fetching restaurants:", error);
       res.status(500).json({ message: "Failed to fetch restaurants" });
     }
   });

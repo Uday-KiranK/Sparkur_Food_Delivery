@@ -48,9 +48,20 @@ const HomePage = () => {
     return params;
   }, [filterVeg, filterRating, filterCategory]);
   
+  // Get search query from URL if present
+  const urlSearchParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const urlSearchQuery = urlSearchParams.get('search');
+  
+  // Set search query from URL if present
+  useEffect(() => {
+    if (urlSearchQuery) {
+      setSearchQuery(urlSearchQuery);
+    }
+  }, [urlSearchQuery]);
+
   // Fetch all restaurants with filters
   const { data: allRestaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
-    queryKey: ["/api/restaurants", filterParams],
+    queryKey: ["/api/restaurants", { ...filterParams, search: searchQuery || urlSearchQuery }],
   });
   
   // Process restaurants for fast delivery filter only

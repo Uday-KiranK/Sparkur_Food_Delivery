@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { UserRole } from "@shared/schema";
+import { Restaurant } from "@shared/schema";
 import CartDropdown from "../cart-dropdown";
 import LoginDropdown from "../login-dropdown";
 import {
@@ -15,6 +16,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 const Header = () => {
   const [location] = useLocation();
@@ -63,6 +66,55 @@ const Header = () => {
   const [offersOpen, setOffersOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
+  
+  // Fetch restaurants for search
+  const { data: restaurants } = useQuery<Restaurant[]>({
+    queryKey: ["/api/restaurants"],
+    enabled: searchOpen,
+  });
+  
+  // Function to perform search
+  const handleSearch = () => {
+    if (!searchQuery.trim() || !restaurants) {
+      setSearchResults([]);
+      return;
+    }
+    
+    // Case insensitive search on the client side (as backup for the server search)
+    const results = restaurants.filter(restaurant => 
+      restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      restaurant.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      restaurant.cuisine_types.some(type => 
+        type.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+    
+    setSearchResults(results);
+  };
+  
+  // Perform search when search button is clicked
+  const performServerSearch = () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Empty search",
+        description: "Please enter a search term",
+      });
+      return;
+    }
+    
+    // Close the search dialog
+    setSearchOpen(false);
+    
+    // Navigate to home page with search query
+    window.location.href = `/?search=${encodeURIComponent(searchQuery)}`;
+  };
+  
+  // Handle popular search term click
+  const handlePopularSearchClick = (term: string) => {
+    setSearchQuery(term);
+    setTimeout(() => performServerSearch(), 100);
+  };
 
   // Get user role-specific dashboard link
   const getDashboardLink = () => {
@@ -123,23 +175,100 @@ const Header = () => {
                       <div className="flex gap-2">
                         <Input 
                           value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            handleSearch();
+                          }}
                           placeholder="Search for restaurants, dishes or cuisines..."
                           className="flex-1"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              performServerSearch();
+                            }
+                          }}
                         />
-                        <button className="bg-[#FC8019] text-white px-4 py-2 rounded-md flex items-center">
+                        <button 
+                          className="bg-[#FC8019] text-white px-4 py-2 rounded-md flex items-center"
+                          onClick={performServerSearch}
+                        >
                           <i className="bi bi-search mr-2"></i>
                           Search
                         </button>
                       </div>
-                      <div className="mt-2">
+                      
+                      {/* Show search results if available */}
+                      {searchQuery.trim() !== "" && searchResults.length > 0 && (
+                        <div className="mt-4">
+                          <h3 className="text-sm font-medium text-gray-500 mb-2">Search Results:</h3>
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {searchResults.map(restaurant => (
+                              <Link 
+                                key={restaurant.id} 
+                                href={`/restaurant/${restaurant.id}`}
+                                className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                                onClick={() => setSearchOpen(false)}
+                              >
+                                <div className="w-12 h-12 rounded-md overflow-hidden mr-3">
+                                  <img 
+                                    src={restaurant.image_url} 
+                                    alt={restaurant.name} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div>
+                                  <h4 className="font-medium">{restaurant.name}</h4>
+                                  <p className="text-xs text-gray-500">
+                                    {restaurant.cuisine_types.slice(0, 3).join(", ")}
+                                    {restaurant.cuisine_types.length > 3 && "..."}
+                                  </p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show empty state message */}
+                      {searchQuery.trim() !== "" && searchResults.length === 0 && (
+                        <div className="mt-4 py-4 text-center">
+                          <p className="text-gray-500">No restaurants found matching "{searchQuery}"</p>
+                          <p className="text-sm text-gray-400 mt-1">Try a different search term</p>
+                        </div>
+                      )}
+                      
+                      <div className="mt-4">
                         <h3 className="text-sm font-medium text-gray-500 mb-2">Popular Searches:</h3>
                         <div className="flex flex-wrap gap-2">
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Pizza</span>
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Burger</span>
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Chinese</span>
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Biryani</span>
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer">Ice Cream</span>
+                          <span 
+                            onClick={() => handlePopularSearchClick("Pizza")}
+                            className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+                          >
+                            Pizza
+                          </span>
+                          <span 
+                            onClick={() => handlePopularSearchClick("Burger")}
+                            className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+                          >
+                            Burger
+                          </span>
+                          <span 
+                            onClick={() => handlePopularSearchClick("Chinese")}
+                            className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+                          >
+                            Chinese
+                          </span>
+                          <span 
+                            onClick={() => handlePopularSearchClick("Biryani")}
+                            className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+                          >
+                            Biryani
+                          </span>
+                          <span 
+                            onClick={() => handlePopularSearchClick("Ice Cream")}
+                            className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200 cursor-pointer"
+                          >
+                            Ice Cream
+                          </span>
                         </div>
                       </div>
                     </div>

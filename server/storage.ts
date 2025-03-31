@@ -1,6 +1,6 @@
 import { users, restaurants, menu_items, orders, food_categories, categories, UserRole, OrderStatus } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, and, inArray, or, desc, isNull } from "drizzle-orm";
+import { eq, like, ilike, and, inArray, or, desc, isNull, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { type User, type InsertUser, type Restaurant, type InsertRestaurant, 
@@ -20,7 +20,7 @@ export interface IStorage {
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantsByAdmin(adminId: number): Promise<Restaurant[]>;
-  getRestaurants(filters?: {category?: string, veg?: boolean, rating?: number}): Promise<Restaurant[]>;
+  getRestaurants(filters?: {category?: string, veg?: boolean, rating?: number, search?: string}): Promise<Restaurant[]>;
   getFeaturedRestaurants(): Promise<Restaurant[]>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
   updateRestaurant(id: number, restaurant: Partial<InsertRestaurant>): Promise<Restaurant | undefined>;
@@ -103,7 +103,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(restaurants).where(eq(restaurants.admin_id, adminId));
   }
 
-  async getRestaurants(filters?: {category?: string, veg?: boolean | undefined, rating?: number}): Promise<Restaurant[]> {
+  async getRestaurants(filters?: {category?: string, veg?: boolean | undefined, rating?: number, search?: string}): Promise<Restaurant[]> {
     let query = db.select().from(restaurants);
     
     if (filters) {
@@ -114,7 +114,7 @@ export class DatabaseStorage implements IStorage {
       
       // Only apply rating filter if it's provided
       if (filters.rating && filters.rating > 0) {
-        query = query.where(restaurants.rating.gte(filters.rating));
+        query = query.where(sql`${restaurants.rating} >= ${filters.rating}`);
       }
       
       // Apply category filter if provided
@@ -127,10 +127,27 @@ export class DatabaseStorage implements IStorage {
         // We're using string matching since the array is stored as text in SQLite/Postgres
         query = query.where(
           or(
-            like(restaurants.cuisine_types.toString().toLowerCase(), `%${lowerCategory}%`),
-            like(restaurants.cuisine_types.toString().toLowerCase(), `%"${lowerCategory}"%`)
+            sql`LOWER(${restaurants.cuisine_types}::TEXT) LIKE ${'%' + lowerCategory + '%'}`,
+            sql`LOWER(${restaurants.cuisine_types}::TEXT) LIKE ${'%"' + lowerCategory + '"%'}`
           )
         );
+      }
+      
+      // Apply search filter if provided
+      if (filters.search) {
+        const searchTerm = filters.search.trim();
+        if (searchTerm) {
+          query = query.where(
+            or(
+              // Search in restaurant name (case-insensitive)
+              ilike(restaurants.name, `%${searchTerm}%`),
+              // Search in cuisine types (case-insensitive)
+              sql`LOWER(${restaurants.cuisine_types}::TEXT) LIKE ${'%' + searchTerm.toLowerCase() + '%'}`,
+              // Search in description (case-insensitive)
+              ilike(restaurants.description, `%${searchTerm}%`)
+            )
+          );
+        }
       }
     }
     
