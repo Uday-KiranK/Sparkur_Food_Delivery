@@ -183,8 +183,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMenuItem(menuItem: InsertMenuItem): Promise<MenuItem> {
-    const [createdMenuItem] = await db.insert(menu_items).values(menuItem).returning();
-    return createdMenuItem;
+    try {
+      console.log("Storage: Creating menu item with data:", menuItem);
+      
+      // Ensure all required fields have the correct type
+      const processedMenuItem = {
+        ...menuItem,
+        restaurant_id: Number(menuItem.restaurant_id),
+        price: Number(menuItem.price),
+        // If category_id is provided, convert it to a number
+        category_id: menuItem.category_id ? Number(menuItem.category_id) : null,
+        is_veg: typeof menuItem.is_veg === 'string' ? 
+          menuItem.is_veg === 'true' : Boolean(menuItem.is_veg),
+        is_available: typeof menuItem.is_available === 'string' ? 
+          menuItem.is_available === 'true' : Boolean(menuItem.is_available)
+      };
+      
+      console.log("Storage: Processed menu item data:", processedMenuItem);
+      
+      const [createdMenuItem] = await db.insert(menu_items).values(processedMenuItem).returning();
+      console.log("Storage: Menu item created successfully:", createdMenuItem);
+      return createdMenuItem;
+    } catch (error: any) {
+      console.error("Error creating menu item:", error);
+      throw new Error(`Failed to create menu item: ${error.message || 'Unknown error'}`);
+    }
   }
 
   async updateMenuItem(id: number, menuItemUpdate: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
@@ -207,8 +230,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
-    const [createdCategory] = await db.insert(categories).values(category).returning();
-    return createdCategory;
+    try {
+      console.log("Storage: Creating category with data:", category);
+      
+      // Ensure restaurant_id is a number
+      const processedCategory = {
+        ...category,
+        restaurant_id: Number(category.restaurant_id)
+      };
+      
+      console.log("Storage: Processed category data:", processedCategory);
+      
+      const [createdCategory] = await db.insert(categories).values(processedCategory).returning();
+      console.log("Storage: Category created successfully:", createdCategory);
+      return createdCategory;
+    } catch (error: any) {
+      console.error("Error creating category:", error);
+      throw new Error(`Failed to create category: ${error.message || 'Unknown error'}`);
+    }
   }
 
   // Order operations

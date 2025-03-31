@@ -263,15 +263,35 @@ const MenuManagement = () => {
     }
     
     console.log("Submitting menu item, restaurant ID:", restaurant.id);
+    console.log("Form data:", data);
     
-    // If editing, update the item
-    if (editingItem) {
-      updateMenuItemMutation.mutate({ id: editingItem.id, data });
-    } else {
-      // Create new item
-      createMenuItemMutation.mutate({
+    try {
+      // Prepare the data
+      const preparedData = {
         ...data,
         restaurant_id: restaurant.id,
+        // Ensure numeric values
+        price: typeof data.price === 'string' ? parseFloat(data.price) : data.price,
+        category_id: data.category_id ? 
+          (typeof data.category_id === 'string' ? parseInt(data.category_id) : data.category_id) 
+          : null
+      };
+      
+      console.log("Prepared menu item data:", preparedData);
+      
+      // If editing, update the item
+      if (editingItem) {
+        updateMenuItemMutation.mutate({ id: editingItem.id, data: preparedData });
+      } else {
+        // Create new item
+        createMenuItemMutation.mutate(preparedData);
+      }
+    } catch (error) {
+      console.error("Error preparing menu item data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare menu item data",
+        variant: "destructive",
       });
     }
   };
@@ -287,11 +307,26 @@ const MenuManagement = () => {
     }
     
     console.log("Submitting category, restaurant ID:", restaurant.id);
+    console.log("Category form data:", data);
     
-    createCategoryMutation.mutate({
-      ...data,
-      restaurant_id: restaurant.id,
-    });
+    try {
+      // Prepare the data
+      const preparedData = {
+        ...data,
+        restaurant_id: typeof restaurant.id === 'string' ? parseInt(restaurant.id) : restaurant.id
+      };
+      
+      console.log("Prepared category data:", preparedData);
+      
+      createCategoryMutation.mutate(preparedData);
+    } catch (error) {
+      console.error("Error preparing category data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare category data",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteMenuItem = (id: number) => {
