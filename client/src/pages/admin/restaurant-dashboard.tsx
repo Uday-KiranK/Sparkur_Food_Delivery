@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import AddRestaurantForm from "@/components/add-restaurant-form";
 
 const updateRestaurantSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,6 +33,7 @@ const RestaurantDashboard = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"orders" | "info">("orders");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showAddRestaurantForm, setShowAddRestaurantForm] = useState(false);
 
   // Redirect if not a restaurant admin
   useEffect(() => {
@@ -198,14 +200,28 @@ const RestaurantDashboard = () => {
         <Header />
         <div className="flex-grow bg-[#f2f2f2] py-8">
           <div className="container mx-auto px-4">
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-              <i className="bi bi-shop text-5xl text-gray-400 mb-4"></i>
-              <h2 className="text-2xl font-bold mb-2">No Restaurant Found</h2>
-              <p className="text-[#686b78] mb-4">You don't have a restaurant yet. Create one to get started.</p>
-              <button className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors">
-                Create Restaurant
-              </button>
-            </div>
+            {showAddRestaurantForm ? (
+              <AddRestaurantForm 
+                onSuccess={() => {
+                  setShowAddRestaurantForm(false);
+                  // Refresh the restaurants list
+                  queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+                }} 
+                onCancel={() => setShowAddRestaurantForm(false)} 
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                <i className="bi bi-shop text-5xl text-gray-400 mb-4"></i>
+                <h2 className="text-2xl font-bold mb-2">No Restaurant Found</h2>
+                <p className="text-[#686b78] mb-4">You don't have a restaurant yet. Create one to get started.</p>
+                <button 
+                  className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
+                  onClick={() => setShowAddRestaurantForm(true)}
+                >
+                  Create Restaurant
+                </button>
+              </div>
+            )}
           </div>
         </div>
         <Footer />
@@ -244,7 +260,7 @@ const RestaurantDashboard = () => {
                 )}
               </div>
               
-              <div className="flex space-x-4">
+              <div className="flex flex-wrap space-x-4">
                 <button 
                   className={`px-4 py-2 rounded-md ${activeTab === "orders" ? "bg-[#FC8019] text-white" : "bg-gray-100 hover:bg-gray-200"}`}
                   onClick={() => setActiveTab("orders")}
@@ -263,10 +279,33 @@ const RestaurantDashboard = () => {
                 >
                   Menu Management
                 </button>
+                <button 
+                  className="px-4 py-2 flex items-center space-x-1 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
+                  onClick={() => setShowAddRestaurantForm(true)}
+                >
+                  <PlusCircle className="h-4 w-4" /> <span>Add Restaurant</span>
+                </button>
               </div>
             </div>
           </div>
           
+          {showAddRestaurantForm && (
+            <div className="mb-6">
+              <AddRestaurantForm 
+                onSuccess={() => {
+                  setShowAddRestaurantForm(false);
+                  // Refresh the restaurants list
+                  queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+                  toast({
+                    title: "Success",
+                    description: "Your new restaurant has been added successfully!",
+                  });
+                }} 
+                onCancel={() => setShowAddRestaurantForm(false)} 
+              />
+            </div>
+          )}
+
           {activeTab === "orders" ? (
             <>
               {selectedOrder ? (
