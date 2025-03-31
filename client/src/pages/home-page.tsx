@@ -3,14 +3,21 @@ import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import RestaurantCard from "@/components/restaurant-card";
 import CategoryCard from "@/components/category-card";
-import { Restaurant, FoodCategory } from "@shared/schema";
-import { useState, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Restaurant, FoodCategory, MenuItem } from "@shared/schema";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
+import { Loader2, Search, X } from "lucide-react";
 
 const HomePage = () => {
+  const [, navigate] = useLocation();
   const [filterRating, setFilterRating] = useState(false);
   const [filterVeg, setFilterVeg] = useState(false);
   const [filterFastDelivery, setFilterFastDelivery] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{restaurants: Restaurant[], menuItems: MenuItem[]} | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Fetch featured restaurants
   const { data: featuredRestaurants, isLoading: isFeaturedLoading } = useQuery<Restaurant[]>({
@@ -46,6 +53,73 @@ const HomePage = () => {
     return restaurants;
   }, [allRestaurants, filterFastDelivery]);
 
+  // Fetch all menu items for search
+  const { data: allMenuItems } = useQuery<MenuItem[]>({
+    queryKey: ["/api/menu-items"],
+    enabled: !!allRestaurants,
+  });
+  
+  // Handle search functionality
+  const handleSearch = () => {
+    if (!searchQuery.trim() || !allRestaurants || !allMenuItems) return;
+    
+    setIsSearching(true);
+    
+    // Case-insensitive search
+    const query = searchQuery.toLowerCase();
+    
+    // Filter restaurants by name and description
+    const matchedRestaurants = allRestaurants.filter(restaurant => 
+      restaurant.name.toLowerCase().includes(query) || 
+      (restaurant.description && restaurant.description.toLowerCase().includes(query))
+    );
+    
+    // Filter menu items by name
+    const matchedMenuItems = allMenuItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    setSearchResults({
+      restaurants: matchedRestaurants,
+      menuItems: matchedMenuItems
+    });
+    
+    setIsSearching(false);
+    setShowSearchDropdown(true);
+  };
+  
+  // Clear search results
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults(null);
+    setShowSearchDropdown(false);
+  };
+  
+  // Handle click outside search dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  
+  // Handle menu item click to navigate to restaurant page
+  const handleMenuItemClick = (menuItem: MenuItem) => {
+    if (!allRestaurants) return;
+    
+    const restaurant = allRestaurants.find(r => r.id === menuItem.restaurant_id);
+    if (restaurant) {
+      navigate(`/restaurant/${restaurant.id}`);
+      clearSearch();
+    }
+  };
+  
   // Generate query params for filtered API calls
   const getFilterQueryParams = () => {
     let params = new URLSearchParams();
@@ -58,6 +132,122 @@ const HomePage = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
 
+      {/* Search Bar */}
+      <div className="sticky top-0 z-50 bg-white shadow-md py-3 border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="relative" ref={searchRef}>
+            <div className="flex items-center">
+              <div className="relative flex-grow">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input 
+                  type="text" 
+                  placeholder="Search for restaurants or food items..." 
+                  className="px-4 py-2 pl-10 pr-10 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#FC8019] w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+                {searchQuery && (
+                  <button 
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={clearSearch}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+              <button 
+                className="ml-2 bg-[#FC8019] text-white px-4 py-2 rounded-md font-medium hover:bg-[#e67016] transition-colors flex items-center justify-center"
+                onClick={handleSearch}
+                disabled={isSearching || !searchQuery.trim()}
+              >
+                {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+              </button>
+            </div>
+            
+            {/* Search Results Dropdown */}
+            {showSearchDropdown && searchResults && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+                {searchResults.restaurants.length === 0 && searchResults.menuItems.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    No results found for "{searchQuery}"
+                  </div>
+                ) : (
+                  <>
+                    {searchResults.restaurants.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-gray-100 font-semibold text-sm">Restaurants</div>
+                        <div className="divide-y divide-gray-100">
+                          {searchResults.restaurants.map(restaurant => (
+                            <div 
+                              key={restaurant.id} 
+                              className="p-3 hover:bg-gray-50 cursor-pointer flex items-center"
+                              onClick={() => {
+                                navigate(`/restaurant/${restaurant.id}`);
+                                clearSearch();
+                              }}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+                                {restaurant.image_url ? (
+                                  <img 
+                                    src={restaurant.image_url} 
+                                    alt={restaurant.name} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-[#FC8019] flex items-center justify-center text-white font-bold">
+                                    {restaurant.name.charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="ml-3">
+                                <div className="font-medium">{restaurant.name}</div>
+                                <div className="text-sm text-gray-500 truncate max-w-md">{restaurant.cuisine_types.join(", ")}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {searchResults.menuItems.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-gray-100 font-semibold text-sm">Menu Items</div>
+                        <div className="divide-y divide-gray-100">
+                          {searchResults.menuItems.map(item => (
+                            <div 
+                              key={item.id} 
+                              className="p-3 hover:bg-gray-50 cursor-pointer"
+                              onClick={() => handleMenuItemClick(item)}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className="font-medium">{item.name}</div>
+                                  <div className="text-sm text-gray-500">₹{item.price}</div>
+                                </div>
+                                {item.image_url && (
+                                  <div className="w-12 h-12 rounded-md overflow-hidden">
+                                    <img 
+                                      src={item.image_url} 
+                                      alt={item.name} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[#f2f2f2] to-[#fef2e8] py-10 md:py-16 relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">

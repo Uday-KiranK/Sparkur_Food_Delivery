@@ -8,6 +8,31 @@ import { z } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth routes
   setupAuth(app);
+  
+  // User routes
+  app.patch("/api/user/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const userId = Number(req.params.id);
+      
+      // Users can only update their own profile
+      if (req.user.id !== userId) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, req.body);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user profile" });
+    }
+  });
 
   // Restaurant routes
   app.get("/api/restaurants", async (req, res) => {
@@ -391,6 +416,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedOrder);
     } catch (error) {
       res.status(500).json({ message: "Failed to update order status" });
+    }
+  });
+
+  // Get all menu items (for search functionality)
+  app.get("/api/menu-items", async (req, res) => {
+    try {
+      // Get all restaurants first
+      const restaurants = await storage.getRestaurants();
+      
+      // Fetch menu items for each restaurant and flatten the array
+      const menuItemPromises = restaurants.map(restaurant => 
+        storage.getMenuItems(restaurant.id)
+      );
+      
+      const menuItemsNested = await Promise.all(menuItemPromises);
+      const menuItems = menuItemsNested.flat();
+      
+      res.json(menuItems);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch menu items" });
     }
   });
 

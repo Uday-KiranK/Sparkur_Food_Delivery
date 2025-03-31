@@ -1,17 +1,74 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { useAuth } from "@/hooks/use-auth";
-import { Order, OrderStatus, UserRole } from "@shared/schema";
+import { Order, OrderStatus, UserRole, insertUserSchema } from "@shared/schema";
 import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+// Profile form schema
+const profileSchema = z.object({
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  phone: z.string().min(10, { message: "Phone number must be at least 10 digits" }),
+  address: z.string().optional(),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 const ProfilePage = () => {
   const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<"profile" | "orders">("profile");
+  const [isEditing, setIsEditing] = useState(false);
+  const { toast } = useToast();
 
+  // Set up form with react-hook-form
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: user?.username || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      address: user?.address || "",
+    }
+  });
+  
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormData) => {
+      if (!user) throw new Error("User not authenticated");
+      const res = await apiRequest("PATCH", `/api/user/${user.id}`, data);
+      return await res.json();
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["/api/user"], updatedUser);
+      setIsEditing(false);
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleSubmit = form.handleSubmit((data) => {
+    updateProfileMutation.mutate(data);
+  });
+  
   // Fetch user orders
   const { data: orders, isLoading: isOrdersLoading } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -132,40 +189,128 @@ const ProfilePage = () => {
             <div className="md:w-3/4">
               {activeTab === "profile" ? (
                 <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h2 className="text-xl font-bold mb-6">My Profile</h2>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-sm text-[#686b78] mb-1">Username</h3>
-                      <p className="font-medium">{user.username}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm text-[#686b78] mb-1">Email</h3>
-                      <p className="font-medium">{user.email}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm text-[#686b78] mb-1">Phone</h3>
-                      <p className="font-medium">{user.phone}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm text-[#686b78] mb-1">Address</h3>
-                      <p className="font-medium">{user.address || "No address provided"}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm text-[#686b78] mb-1">Role</h3>
-                      <p className="font-medium capitalize">{user.role.replace('_', ' ')}</p>
-                    </div>
-                    
-                    <div className="pt-4">
-                      <button className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold">My Profile</h2>
+                    {isEditing ? (
+                      <div className="flex space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditing(false)}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                          disabled={updateProfileMutation.isPending}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSubmit}
+                          className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
+                          disabled={updateProfileMutation.isPending}
+                        >
+                          {updateProfileMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                          ) : null}
+                          Save Changes
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
+                      >
                         Edit Profile
                       </button>
-                    </div>
+                    )}
                   </div>
+                  
+                  {isEditing ? (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div>
+                        <label htmlFor="username" className="text-sm text-[#686b78] mb-1 block">Username</label>
+                        <input
+                          id="username"
+                          type="text"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FC8019]"
+                          {...form.register("username")}
+                        />
+                        {form.formState.errors.username && (
+                          <p className="text-sm text-red-500 mt-1">{form.formState.errors.username.message}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="email" className="text-sm text-[#686b78] mb-1 block">Email</label>
+                        <input
+                          id="email"
+                          type="email"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FC8019]"
+                          {...form.register("email")}
+                        />
+                        {form.formState.errors.email && (
+                          <p className="text-sm text-red-500 mt-1">{form.formState.errors.email.message}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="phone" className="text-sm text-[#686b78] mb-1 block">Phone</label>
+                        <input
+                          id="phone"
+                          type="tel"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FC8019]"
+                          {...form.register("phone")}
+                        />
+                        {form.formState.errors.phone && (
+                          <p className="text-sm text-red-500 mt-1">{form.formState.errors.phone.message}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="address" className="text-sm text-[#686b78] mb-1 block">Address</label>
+                        <textarea
+                          id="address"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FC8019]"
+                          rows={3}
+                          {...form.register("address")}
+                        />
+                        {form.formState.errors.address && (
+                          <p className="text-sm text-red-500 mt-1">{form.formState.errors.address.message}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm text-[#686b78] mb-1">Role</h3>
+                        <p className="font-medium capitalize">{user.role.replace('_', ' ')}</p>
+                        <p className="text-xs text-gray-500 mt-1">Role cannot be changed</p>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-sm text-[#686b78] mb-1">Username</h3>
+                        <p className="font-medium">{user.username}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm text-[#686b78] mb-1">Email</h3>
+                        <p className="font-medium">{user.email}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm text-[#686b78] mb-1">Phone</h3>
+                        <p className="font-medium">{user.phone}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm text-[#686b78] mb-1">Address</h3>
+                        <p className="font-medium">{user.address || "No address provided"}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm text-[#686b78] mb-1">Role</h3>
+                        <p className="font-medium capitalize">{user.role.replace('_', ' ')}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow-sm p-6">
