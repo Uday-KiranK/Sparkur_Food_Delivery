@@ -376,14 +376,7 @@ const ProfilePage = () => {
                               <span>₹{order.total_amount}</span>
                             </div>
                             
-                            {/* Order actions based on status */}
-                            {order.status === OrderStatus.PENDING && (
-                              <div className="mt-4">
-                                <button className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
-                                  Cancel Order
-                                </button>
-                              </div>
-                            )}
+                            {/* No order actions available */}
                           </div>
                         );
                       })}
