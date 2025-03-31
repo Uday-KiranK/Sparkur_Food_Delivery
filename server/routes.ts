@@ -44,6 +44,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search: req.query.search as string | undefined
       };
       
+      // If admin parameter is set to true, return only restaurants owned by this admin
+      const adminOnly = req.query.admin === 'true';
+      
+      if (adminOnly && req.isAuthenticated() && req.user.role === UserRole.RESTAURANT_ADMIN) {
+        console.log("Fetching restaurants for admin:", req.user.id);
+        const restaurants = await storage.getRestaurantsByAdmin(req.user.id);
+        return res.json(restaurants);
+      }
+      
       const restaurants = await storage.getRestaurants(filters);
       res.json(restaurants);
     } catch (error) {

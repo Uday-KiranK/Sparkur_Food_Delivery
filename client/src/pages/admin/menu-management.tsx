@@ -42,9 +42,14 @@ const MenuManagement = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const selectedRestaurantId = urlParams.get('restaurantId') ? Number(urlParams.get('restaurantId')) : undefined;
 
-  // Fetch restaurant info
+  // Fetch restaurant info - only those owned by this admin
   const { data: restaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
-    queryKey: ["/api/restaurants"],
+    queryKey: ["/api/restaurants", "admin"],
+    queryFn: async () => {
+      const res = await fetch("/api/restaurants?admin=true");
+      if (!res.ok) throw new Error("Failed to fetch restaurants");
+      return res.json();
+    },
     enabled: !!user && user.role === UserRole.RESTAURANT_ADMIN,
   });
 

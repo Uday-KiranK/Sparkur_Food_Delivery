@@ -65,7 +65,7 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
         title: "Success",
         description: "Restaurant created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants", "admin"] });
       if (onSuccess) onSuccess();
     },
     onError: (error: Error) => {

@@ -51,7 +51,12 @@ const RestaurantDashboard = () => {
   
   // Fetch restaurants owned by this admin
   const { data: restaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
-    queryKey: ["/api/restaurants"],
+    queryKey: ["/api/restaurants", "admin"],
+    queryFn: async () => {
+      const res = await fetch("/api/restaurants?admin=true");
+      if (!res.ok) throw new Error("Failed to fetch restaurants");
+      return res.json();
+    },
     enabled: !!user && user.role === UserRole.RESTAURANT_ADMIN,
   });
 
@@ -120,7 +125,7 @@ const RestaurantDashboard = () => {
         title: "Success",
         description: "Restaurant information updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants", "admin"] });
     },
     onError: (error: Error) => {
       toast({
@@ -207,7 +212,7 @@ const RestaurantDashboard = () => {
                 onSuccess={() => {
                   setShowAddRestaurantForm(false);
                   // Refresh the restaurants list
-                  queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/restaurants", "admin"] });
                 }} 
                 onCancel={() => setShowAddRestaurantForm(false)} 
               />
@@ -317,7 +322,7 @@ const RestaurantDashboard = () => {
                 onSuccess={() => {
                   setShowAddRestaurantForm(false);
                   // Refresh the restaurants list
-                  queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/restaurants", "admin"] });
                   toast({
                     title: "Success",
                     description: "Your new restaurant has been added successfully!",
@@ -345,7 +350,7 @@ const RestaurantDashboard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <h3 className="font-bold mb-2">Order Information</h3>
-                      <p><span className="text-[#686b78]">Order Date:</span> {formatDate(selectedOrder.order_time.toString())}</p>
+                      <p><span className="text-[#686b78]">Order Date:</span> {formatDate(selectedOrder.order_time?.toString())}</p>
                       <p><span className="text-[#686b78]">Current Status:</span> {selectedOrder.status}</p>
                       <p><span className="text-[#686b78]">Delivery Address:</span> {selectedOrder.delivery_address}</p>
                       {selectedOrder.special_instructions && (
@@ -453,123 +458,151 @@ const RestaurantDashboard = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Pending Orders */}
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-bold mb-4 flex items-center">
-                      <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span> New Orders
-                    </h2>
-                    
-                    {isOrdersLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
-                      </div>
-                    ) : pendingOrders.length > 0 ? (
-                      <div className="space-y-4">
-                        {pendingOrders.map((order) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Pending Orders Column */}
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-blue-500 text-white px-4 py-3">
+                      <h3 className="font-bold">New Orders ({pendingOrders.length})</h3>
+                    </div>
+                    <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                      {isOrdersLoading ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
+                        </div>
+                      ) : pendingOrders.length > 0 ? (
+                        pendingOrders.map((order) => (
                           <div 
-                            key={order.id} 
-                            className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-[#FC8019] transition-colors"
+                            key={order.id}
+                            className="border rounded-md p-3 mb-3 hover:border-[#FC8019] cursor-pointer transition-colors"
                             onClick={() => setSelectedOrder(order)}
                           >
-                            <div className="flex justify-between items-start mb-2">
-                              <p className="font-bold">Order #{order.id}</p>
-                              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                            <div className="flex justify-between">
+                              <span className="font-bold">Order #{order.id}</span>
+                              <span className={`
+                                px-2 py-0.5 text-xs rounded-full
+                                ${order.status === OrderStatus.PENDING ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}
+                              `}>
                                 {order.status}
                               </span>
                             </div>
-                            <p className="text-sm mb-2">{formatDate(order.order_time.toString())}</p>
-                            <p className="text-sm font-medium">₹{order.total_amount}</p>
+                            <p className="text-sm text-[#686b78]">{formatDate(order.order_time?.toString())}</p>
+                            <p className="text-sm truncate">
+                              {(() => {
+                                let orderItems = [];
+                                try {
+                                  orderItems = typeof order.items === 'string' 
+                                    ? JSON.parse(order.items) 
+                                    : order.items || [];
+                                } catch (error) {
+                                  console.error("Error parsing order items:", error);
+                                }
+                                return orderItems;
+                              })().length} items · ₹{order.total_amount}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-[#686b78]">
-                        No new orders
-                      </div>
-                    )}
+                        ))
+                      ) : (
+                        <p className="text-center text-[#686b78] py-4">No new orders.</p>
+                      )}
+                    </div>
                   </div>
                   
-                  {/* Preparing Orders */}
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-bold mb-4 flex items-center">
-                      <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span> Preparing
-                    </h2>
-                    
-                    {isOrdersLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
-                      </div>
-                    ) : preparingOrders.length > 0 ? (
-                      <div className="space-y-4">
-                        {preparingOrders.map((order) => (
+                  {/* Preparing Orders Column */}
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-purple-500 text-white px-4 py-3">
+                      <h3 className="font-bold">Preparing ({preparingOrders.length})</h3>
+                    </div>
+                    <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                      {isOrdersLoading ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
+                        </div>
+                      ) : preparingOrders.length > 0 ? (
+                        preparingOrders.map((order) => (
                           <div 
-                            key={order.id} 
-                            className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-[#FC8019] transition-colors"
+                            key={order.id}
+                            className="border rounded-md p-3 mb-3 hover:border-[#FC8019] cursor-pointer transition-colors"
                             onClick={() => setSelectedOrder(order)}
                           >
-                            <div className="flex justify-between items-start mb-2">
-                              <p className="font-bold">Order #{order.id}</p>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                order.status === OrderStatus.PREPARING 
-                                  ? "bg-blue-100 text-blue-800" 
-                                  : "bg-purple-100 text-purple-800"
-                              }`}>
+                            <div className="flex justify-between">
+                              <span className="font-bold">Order #{order.id}</span>
+                              <span className={`
+                                px-2 py-0.5 text-xs rounded-full
+                                ${order.status === OrderStatus.PREPARING ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}
+                              `}>
                                 {order.status}
                               </span>
                             </div>
-                            <p className="text-sm mb-2">{formatDate(order.order_time.toString())}</p>
-                            <p className="text-sm font-medium">₹{order.total_amount}</p>
+                            <p className="text-sm text-[#686b78]">{formatDate(order.order_time?.toString())}</p>
+                            <p className="text-sm truncate">
+                              {(() => {
+                                let orderItems = [];
+                                try {
+                                  orderItems = typeof order.items === 'string' 
+                                    ? JSON.parse(order.items) 
+                                    : order.items || [];
+                                } catch (error) {
+                                  console.error("Error parsing order items:", error);
+                                }
+                                return orderItems;
+                              })().length} items · ₹{order.total_amount}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-[#686b78]">
-                        No orders in preparation
-                      </div>
-                    )}
+                        ))
+                      ) : (
+                        <p className="text-center text-[#686b78] py-4">No orders in preparation.</p>
+                      )}
+                    </div>
                   </div>
                   
-                  {/* Completed Orders */}
-                  <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h2 className="text-lg font-bold mb-4 flex items-center">
-                      <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span> Completed/Delivered
-                    </h2>
-                    
-                    {isOrdersLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
-                      </div>
-                    ) : completedOrders.length > 0 ? (
-                      <div className="space-y-4">
-                        {completedOrders.slice(0, 5).map((order) => (
+                  {/* Completed Orders Column */}
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-green-500 text-white px-4 py-3">
+                      <h3 className="font-bold">Completed / Delivered ({completedOrders.length})</h3>
+                    </div>
+                    <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                      {isOrdersLoading ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
+                        </div>
+                      ) : completedOrders.length > 0 ? (
+                        completedOrders.map((order) => (
                           <div 
-                            key={order.id} 
-                            className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:border-[#FC8019] transition-colors"
+                            key={order.id}
+                            className="border rounded-md p-3 mb-3 hover:border-[#FC8019] cursor-pointer transition-colors"
                             onClick={() => setSelectedOrder(order)}
                           >
-                            <div className="flex justify-between items-start mb-2">
-                              <p className="font-bold">Order #{order.id}</p>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                order.status === OrderStatus.DELIVERED 
-                                  ? "bg-green-100 text-green-800" 
-                                  : order.status === OrderStatus.CANCELLED
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-orange-100 text-orange-800"
-                              }`}>
+                            <div className="flex justify-between">
+                              <span className="font-bold">Order #{order.id}</span>
+                              <span className={`
+                                px-2 py-0.5 text-xs rounded-full
+                                ${order.status === OrderStatus.DELIVERED ? 'bg-green-100 text-green-800' : 
+                                  order.status === OrderStatus.OUT_FOR_DELIVERY ? 'bg-yellow-100 text-yellow-800' : 
+                                  'bg-red-100 text-red-800'}
+                              `}>
                                 {order.status}
                               </span>
                             </div>
-                            <p className="text-sm mb-2">{formatDate(order.order_time.toString())}</p>
-                            <p className="text-sm font-medium">₹{order.total_amount}</p>
+                            <p className="text-sm text-[#686b78]">{formatDate(order.order_time?.toString())}</p>
+                            <p className="text-sm truncate">
+                              {(() => {
+                                let orderItems = [];
+                                try {
+                                  orderItems = typeof order.items === 'string' 
+                                    ? JSON.parse(order.items) 
+                                    : order.items || [];
+                                } catch (error) {
+                                  console.error("Error parsing order items:", error);
+                                }
+                                return orderItems;
+                              })().length} items · ₹{order.total_amount}
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-[#686b78]">
-                        No completed orders
-                      </div>
-                    )}
+                        ))
+                      ) : (
+                        <p className="text-center text-[#686b78] py-4">No completed orders.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -583,7 +616,6 @@ const RestaurantDashboard = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
                     <input 
-                      type="text"
                       {...restaurantForm.register("name")}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                     />
@@ -593,9 +625,8 @@ const RestaurantDashboard = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <input 
-                      type="text"
                       {...restaurantForm.register("phone")}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                     />
@@ -608,7 +639,6 @@ const RestaurantDashboard = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                   <input 
-                    type="text"
                     {...restaurantForm.register("address")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                   />
@@ -629,29 +659,18 @@ const RestaurantDashboard = () => {
                   )}
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine Types (comma separated)</label>
-                  <input 
-                    type="text"
-                    {...restaurantForm.register("cuisine_types")}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
-                  />
-                  {restaurantForm.formState.errors.cuisine_types && (
-                    <p className="text-red-500 text-xs mt-1">{restaurantForm.formState.errors.cuisine_types.message}</p>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Time (minutes)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine Types</label>
                     <input 
-                      type="number"
-                      {...restaurantForm.register("delivery_time", { valueAsNumber: true })}
+                      {...restaurantForm.register("cuisine_types")}
+                      placeholder="Indian, Chinese, Italian..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                     />
-                    {restaurantForm.formState.errors.delivery_time && (
-                      <p className="text-red-500 text-xs mt-1">{restaurantForm.formState.errors.delivery_time.message}</p>
+                    {restaurantForm.formState.errors.cuisine_types && (
+                      <p className="text-red-500 text-xs mt-1">{restaurantForm.formState.errors.cuisine_types.message}</p>
                     )}
+                    <p className="text-xs text-gray-500 mt-1">Separate with commas</p>
                   </div>
                   
                   <div>
@@ -665,30 +684,51 @@ const RestaurantDashboard = () => {
                       <p className="text-red-500 text-xs mt-1">{restaurantForm.formState.errors.price_for_two.message}</p>
                     )}
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Time (mins)</label>
+                    <input 
+                      type="number"
+                      {...restaurantForm.register("delivery_time", { valueAsNumber: true })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
+                    />
+                    {restaurantForm.formState.errors.delivery_time && (
+                      <p className="text-red-500 text-xs mt-1">{restaurantForm.formState.errors.delivery_time.message}</p>
+                    )}
+                  </div>
                 </div>
                 
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox"
-                    id="is_veg"
-                    {...restaurantForm.register("is_veg")}
-                    className="h-4 w-4 text-[#FC8019] focus:ring-[#FC8019] border-gray-300 rounded"
-                  />
-                  <label htmlFor="is_veg" className="ml-2 block text-sm text-gray-700">
-                    This is a pure vegetarian restaurant
-                  </label>
+                <div>
+                  <div className="flex items-center">
+                    <input 
+                      type="checkbox"
+                      id="is_veg"
+                      {...restaurantForm.register("is_veg")}
+                      className="h-4 w-4 text-[#FC8019] focus:ring-[#FC8019] border-gray-300 rounded"
+                    />
+                    <label htmlFor="is_veg" className="ml-2 block text-sm text-gray-700">
+                      Pure Vegetarian Restaurant
+                    </label>
+                  </div>
+                  {restaurantForm.formState.errors.is_veg && (
+                    <p className="text-red-500 text-xs mt-1">{restaurantForm.formState.errors.is_veg.message}</p>
+                  )}
                 </div>
                 
-                <div className="flex justify-end pt-4">
+                <div className="pt-4">
                   <button
                     type="submit"
                     className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors flex items-center"
                     disabled={updateRestaurantMutation.isPending}
                   >
-                    {updateRestaurantMutation.isPending && (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    {updateRestaurantMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Restaurant Information"
                     )}
-                    Update Restaurant Information
                   </button>
                 </div>
               </form>
