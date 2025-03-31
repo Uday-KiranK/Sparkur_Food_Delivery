@@ -161,15 +161,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Parsing menu item data");
-      const menuItemData = insertMenuItemSchema.parse({
-        ...req.body,
-        restaurant_id: Number(req.params.id)
-      });
       
-      console.log("Creating menu item:", menuItemData);
-      const menuItem = await storage.createMenuItem(menuItemData);
-      console.log("Menu item created:", menuItem);
-      res.status(201).json(menuItem);
+      try {
+        // Ensure all required properties are properly handled
+        const menuItemData = insertMenuItemSchema.parse({
+          ...req.body,
+          restaurant_id: Number(req.params.id)
+        });
+        
+        console.log("Parsed menu item data:", menuItemData);
+        
+        // Convert restaurant_id to a number if it's a string
+        if (typeof menuItemData.restaurant_id === 'string') {
+          menuItemData.restaurant_id = Number(menuItemData.restaurant_id);
+        }
+        
+        // Convert category_id to a number if it's a string
+        if (typeof menuItemData.category_id === 'string') {
+          menuItemData.category_id = Number(menuItemData.category_id);
+        }
+        
+        // Ensure price is a number
+        if (typeof menuItemData.price === 'string') {
+          menuItemData.price = Number(menuItemData.price);
+        }
+        
+        console.log("Creating menu item with processed data:", menuItemData);
+        const menuItem = await storage.createMenuItem(menuItemData);
+        console.log("Menu item created:", menuItem);
+        res.status(201).json(menuItem);
+      } catch (err) {
+        console.error("Error processing menu item data:", err);
+        if (err instanceof z.ZodError) {
+          return res.status(400).json({ message: "Invalid menu item data", errors: err.format() });
+        }
+        res.status(500).json({ message: "Failed to create menu item", error: String(err) });
+      }
     } catch (error) {
       console.error("Error creating menu item:", error);
       if (error instanceof z.ZodError) {
@@ -261,15 +288,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Parsing category data");
-      const categoryData = insertCategorySchema.parse({
-        ...req.body,
-        restaurant_id: Number(req.params.id)
-      });
       
-      console.log("Creating category:", categoryData);
-      const category = await storage.createCategory(categoryData);
-      console.log("Category created:", category);
-      res.status(201).json(category);
+      try {
+        // Ensure all required properties are properly handled
+        const categoryData = insertCategorySchema.parse({
+          ...req.body,
+          restaurant_id: Number(req.params.id)
+        });
+        
+        console.log("Parsed category data:", categoryData);
+        
+        // Convert restaurant_id to a number if it's a string
+        if (typeof categoryData.restaurant_id === 'string') {
+          categoryData.restaurant_id = Number(categoryData.restaurant_id);
+        }
+        
+        console.log("Creating category with processed data:", categoryData);
+        const category = await storage.createCategory(categoryData);
+        console.log("Category created:", category);
+        res.status(201).json(category);
+      } catch (err) {
+        console.error("Error processing category data:", err);
+        if (err instanceof z.ZodError) {
+          return res.status(400).json({ message: "Invalid category data", errors: err.format() });
+        }
+        res.status(500).json({ message: "Failed to create category", error: String(err) });
+      }
     } catch (error) {
       console.error("Error creating category:", error);
       if (error instanceof z.ZodError) {

@@ -138,10 +138,19 @@ const MenuManagement = () => {
     mutationFn: async (data: MenuItemForm) => {
       if (!restaurant) throw new Error("No restaurant data available");
       console.log("Creating menu item with data:", data);
-      const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/menu`, data);
-      return await res.json();
+      console.log("Restaurant ID:", restaurant.id);
+      try {
+        const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/menu`, data);
+        const jsonResult = await res.json();
+        console.log("API response:", jsonResult);
+        return jsonResult;
+      } catch (error) {
+        console.error("API request error:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Menu item created successfully:", data);
       toast({
         title: "Success",
         description: "Menu item added successfully",
@@ -211,10 +220,20 @@ const MenuManagement = () => {
   const createCategoryMutation = useMutation({
     mutationFn: async (data: CategoryForm) => {
       if (!restaurant) throw new Error("No restaurant data available");
-      const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/categories`, data);
-      return await res.json();
+      console.log("Creating category with data:", data);
+      console.log("Restaurant ID:", restaurant.id);
+      try {
+        const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/categories`, data);
+        const jsonResult = await res.json();
+        console.log("API response for category:", jsonResult);
+        return jsonResult;
+      } catch (error) {
+        console.error("API request error for category:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Category created successfully:", data);
       toast({
         title: "Success",
         description: "Category added successfully",
@@ -224,6 +243,7 @@ const MenuManagement = () => {
       setShowAddCategory(false);
     },
     onError: (error: Error) => {
+      console.error("Category creation error:", error);
       toast({
         title: "Error",
         description: `Failed to add category: ${error.message}`,
