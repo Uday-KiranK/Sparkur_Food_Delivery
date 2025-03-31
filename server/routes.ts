@@ -405,6 +405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let deliveryPartnerId = undefined;
       if (req.user.role === UserRole.DELIVERY_PARTNER && status === OrderStatus.OUT_FOR_DELIVERY) {
         deliveryPartnerId = req.user.id;
+      } else if (status === OrderStatus.DELIVERED) {
+        // Keep the existing delivery partner when marking as delivered
+        deliveryPartnerId = order.delivery_partner_id;
       }
 
       const updatedOrder = await storage.updateOrderStatus(

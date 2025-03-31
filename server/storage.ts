@@ -1,6 +1,6 @@
 import { users, restaurants, menu_items, orders, food_categories, categories, UserRole, OrderStatus } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, and, inArray, or, desc } from "drizzle-orm";
+import { eq, like, and, inArray, or, desc, isNull } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { type User, type InsertUser, type Restaurant, type InsertRestaurant, 
@@ -206,10 +206,12 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(orders)
       .where(
         or(
+          // Orders assigned to this delivery partner
           eq(orders.delivery_partner_id, partnerId),
+          // Orders ready for pickup (that don't have a delivery partner assigned yet)
           and(
             eq(orders.status, OrderStatus.READY_FOR_PICKUP),
-            eq(orders.delivery_partner_id, undefined)
+            isNull(orders.delivery_partner_id)
           )
         )
       )

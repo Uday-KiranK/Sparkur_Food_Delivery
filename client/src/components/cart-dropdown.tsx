@@ -76,7 +76,6 @@ const CartDropdown = ({ onClose }: CartDropdownProps) => {
             <Link href="/checkout">
               <button 
                 className="w-full bg-[#FC8019] text-white py-2 rounded-md hover:bg-[#e67016] transition-colors"
-                onClick={onClose}
                 disabled={!canCheckout}
               >
                 Checkout
