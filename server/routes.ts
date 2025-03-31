@@ -132,27 +132,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/restaurants/:id/menu", async (req, res) => {
     try {
+      console.log("Adding menu item to restaurant:", req.params.id);
+      console.log("Request body:", req.body);
+      
       if (!req.isAuthenticated() || req.user.role !== UserRole.RESTAURANT_ADMIN) {
+        console.log("Auth error - User:", req.user);
         return res.status(403).json({ message: "Only restaurant admins can add menu items" });
       }
 
       const restaurant = await storage.getRestaurant(Number(req.params.id));
       if (!restaurant) {
+        console.log("Restaurant not found:", req.params.id);
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
       if (restaurant.admin_id !== req.user.id) {
+        console.log("Restaurant admin mismatch. Restaurant admin:", restaurant.admin_id, "User:", req.user.id);
         return res.status(403).json({ message: "You can only add items to your own restaurants" });
       }
 
+      console.log("Parsing menu item data");
       const menuItemData = insertMenuItemSchema.parse({
         ...req.body,
         restaurant_id: Number(req.params.id)
       });
       
+      console.log("Creating menu item:", menuItemData);
       const menuItem = await storage.createMenuItem(menuItemData);
+      console.log("Menu item created:", menuItem);
       res.status(201).json(menuItem);
     } catch (error) {
+      console.error("Error creating menu item:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid menu item data", errors: error.format() });
       }
@@ -222,27 +232,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/restaurants/:id/categories", async (req, res) => {
     try {
+      console.log("Adding category to restaurant:", req.params.id);
+      console.log("Request body:", req.body);
+      
       if (!req.isAuthenticated() || req.user.role !== UserRole.RESTAURANT_ADMIN) {
+        console.log("Auth error - User:", req.user);
         return res.status(403).json({ message: "Only restaurant admins can add categories" });
       }
 
       const restaurant = await storage.getRestaurant(Number(req.params.id));
       if (!restaurant) {
+        console.log("Restaurant not found:", req.params.id);
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
       if (restaurant.admin_id !== req.user.id) {
+        console.log("Restaurant admin mismatch. Restaurant admin:", restaurant.admin_id, "User:", req.user.id);
         return res.status(403).json({ message: "You can only add categories to your own restaurants" });
       }
 
+      console.log("Parsing category data");
       const categoryData = insertCategorySchema.parse({
         ...req.body,
         restaurant_id: Number(req.params.id)
       });
       
+      console.log("Creating category:", categoryData);
       const category = await storage.createCategory(categoryData);
+      console.log("Category created:", category);
       res.status(201).json(category);
     } catch (error) {
+      console.error("Error creating category:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid category data", errors: error.format() });
       }

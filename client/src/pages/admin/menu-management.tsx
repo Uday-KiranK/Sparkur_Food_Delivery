@@ -228,6 +228,17 @@ const MenuManagement = () => {
   });
 
   const onSubmitMenuItem = (data: MenuItemForm) => {
+    if (!restaurant) {
+      toast({
+        title: "Error",
+        description: "No restaurant selected",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log("Submitting menu item, restaurant ID:", restaurant.id);
+    
     // If editing, update the item
     if (editingItem) {
       updateMenuItemMutation.mutate({ id: editingItem.id, data });
@@ -235,15 +246,26 @@ const MenuManagement = () => {
       // Create new item
       createMenuItemMutation.mutate({
         ...data,
-        restaurant_id: restaurant?.id as number,
+        restaurant_id: restaurant.id,
       });
     }
   };
 
   const onSubmitCategory = (data: CategoryForm) => {
+    if (!restaurant) {
+      toast({
+        title: "Error",
+        description: "No restaurant selected",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log("Submitting category, restaurant ID:", restaurant.id);
+    
     createCategoryMutation.mutate({
       ...data,
-      restaurant_id: restaurant?.id as number,
+      restaurant_id: restaurant.id,
     });
   };
 
