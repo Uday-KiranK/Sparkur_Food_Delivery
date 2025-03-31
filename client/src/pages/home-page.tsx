@@ -13,6 +13,7 @@ const HomePage = () => {
   const [filterRating, setFilterRating] = useState(false);
   const [filterVeg, setFilterVeg] = useState(false);
   const [filterFastDelivery, setFilterFastDelivery] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{restaurants: Restaurant[], menuItems: MenuItem[]} | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -29,19 +30,34 @@ const HomePage = () => {
     queryKey: ["/api/food-categories"],
   });
 
+  // Generate query params based on active filters
+  const filterParams = useMemo(() => {
+    return { 
+      veg: filterVeg, 
+      rating: filterRating ? 4.0 : undefined 
+    };
+  }, [filterVeg, filterRating]);
+  
   // Fetch all restaurants with filters
   const { data: allRestaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
-    queryKey: [
-      "/api/restaurants", 
-      { veg: filterVeg, rating: filterRating ? 4.0 : undefined }
-    ],
+    queryKey: ["/api/restaurants", filterParams],
   });
   
-  // Process restaurants for fast delivery filter
+  // Process restaurants for filters (fast delivery & category)
   const filteredRestaurants = useMemo(() => {
     if (!allRestaurants) return [];
     
     let restaurants = [...allRestaurants];
+    
+    // Apply category filter if enabled
+    if (filterCategory) {
+      restaurants = restaurants.filter(restaurant => 
+        restaurant.cuisine_types && 
+        restaurant.cuisine_types.some(cuisine => 
+          cuisine.toLowerCase() === filterCategory.toLowerCase()
+        )
+      );
+    }
     
     // Apply fastest delivery filter if enabled
     if (filterFastDelivery) {
@@ -51,7 +67,7 @@ const HomePage = () => {
     }
     
     return restaurants;
-  }, [allRestaurants, filterFastDelivery]);
+  }, [allRestaurants, filterFastDelivery, filterCategory]);
 
   // Fetch all menu items for search
   const { data: allMenuItems } = useQuery<MenuItem[]>({
@@ -68,15 +84,17 @@ const HomePage = () => {
     // Case-insensitive search
     const query = searchQuery.toLowerCase();
     
-    // Filter restaurants by name and description
+    // Filter restaurants by name, description and cuisine types
     const matchedRestaurants = allRestaurants.filter(restaurant => 
       restaurant.name.toLowerCase().includes(query) || 
-      (restaurant.description && restaurant.description.toLowerCase().includes(query))
+      (restaurant.description && restaurant.description.toLowerCase().includes(query)) ||
+      (restaurant.cuisine_types && restaurant.cuisine_types.some(cuisine => cuisine.toLowerCase().includes(query)))
     );
     
-    // Filter menu items by name
+    // Filter menu items by name and description
     const matchedMenuItems = allMenuItems.filter(item => 
-      item.name.toLowerCase().includes(query)
+      item.name.toLowerCase().includes(query) ||
+      (item.description && item.description.toLowerCase().includes(query))
     );
     
     setSearchResults({
@@ -87,6 +105,19 @@ const HomePage = () => {
     setIsSearching(false);
     setShowSearchDropdown(true);
   };
+  
+  // Auto-search when query changes (after a small delay)
+  useEffect(() => {
+    if (searchQuery.trim().length > 2) {
+      const timer = setTimeout(() => {
+        handleSearch();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    } else if (searchQuery.trim().length === 0) {
+      setShowSearchDropdown(false);
+    }
+  }, [searchQuery]);
   
   // Clear search results
   const clearSearch = () => {
@@ -355,7 +386,20 @@ const HomePage = () => {
           ) : (
             <div className="flex flex-wrap justify-between gap-4">
               {foodCategories?.map((category) => (
-                <CategoryCard key={category.id} category={category} />
+                <CategoryCard 
+                  key={category.id} 
+                  category={category} 
+                  onCategorySelect={(category) => {
+                    setFilterCategory(prevCategory => 
+                      prevCategory === category ? null : category
+                    );
+                    // Smooth scroll to restaurant section
+                    const restaurantSection = document.getElementById("restaurants-section");
+                    if (restaurantSection) {
+                      restaurantSection.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
+                />
               ))}
             </div>
           )}
@@ -363,10 +407,23 @@ const HomePage = () => {
       </section>
 
       {/* Restaurant List */}
-      <section className="py-8 bg-white flex-grow">
+      <section id="restaurants-section" className="py-8 bg-white flex-grow">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Restaurants near you</h2>
+            <div>
+              <h2 className="text-2xl font-bold">Restaurants near you</h2>
+              {filterCategory && (
+                <div className="mt-1 text-[#686b78]">
+                  <span className="font-medium">Category:</span> {filterCategory}
+                  <button 
+                    className="ml-2 text-[#FC8019] hover:text-[#e67016] focus:outline-none"
+                    onClick={() => setFilterCategory(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="hidden md:flex space-x-4">
               <button className="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-[#f2f2f2] transition-colors flex items-center">
                 <i className="bi bi-sliders mr-2"></i>
@@ -418,6 +475,14 @@ const HomePage = () => {
               >
                 Pure Veg
               </button>
+              {filterCategory && (
+                <button 
+                  className="px-3 py-1.5 bg-[#FC8019] text-white border border-[#FC8019] rounded-md flex items-center"
+                  onClick={() => setFilterCategory(null)}
+                >
+                  {filterCategory} ✕
+                </button>
+              )}
             </div>
           </div>
 
