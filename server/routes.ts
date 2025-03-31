@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const filters = {
         category: req.query.category as string | undefined,
-        veg: req.query.veg === "true",
+        veg: req.query.veg === "true" ? true : undefined,
         rating: req.query.rating ? Number(req.query.rating) : undefined
       };
       

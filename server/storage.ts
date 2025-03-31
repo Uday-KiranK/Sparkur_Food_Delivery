@@ -97,21 +97,34 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(restaurants).where(eq(restaurants.admin_id, adminId));
   }
 
-  async getRestaurants(filters?: {category?: string, veg?: boolean, rating?: number}): Promise<Restaurant[]> {
+  async getRestaurants(filters?: {category?: string, veg?: boolean | undefined, rating?: number}): Promise<Restaurant[]> {
     let query = db.select().from(restaurants);
     
     if (filters) {
-      if (filters.veg) {
+      // Only apply veg filter if it's explicitly true
+      if (filters.veg === true) {
         query = query.where(eq(restaurants.is_veg, true));
       }
       
-      if (filters.rating) {
+      // Only apply rating filter if it's provided
+      if (filters.rating && filters.rating > 0) {
         query = query.where(restaurants.rating.gte(filters.rating));
       }
       
+      // Apply category filter if provided
       if (filters.category) {
-        // This is a simplification - would need to join with categories in a real app
-        query = query.where(like(restaurants.cuisine_types.toString(), `%${filters.category}%`));
+        // Convert to lowercase for case-insensitive matching
+        const lowerCategory = filters.category.toLowerCase();
+        
+        // This is a simplification - in a real app, we'd use proper joins
+        // Here we're checking if the category exists in the cuisine_types array
+        // We're using string matching since the array is stored as text in SQLite/Postgres
+        query = query.where(
+          or(
+            like(restaurants.cuisine_types.toString().toLowerCase(), `%${lowerCategory}%`),
+            like(restaurants.cuisine_types.toString().toLowerCase(), `%"${lowerCategory}"%`)
+          )
+        );
       }
     }
     

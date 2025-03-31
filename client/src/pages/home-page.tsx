@@ -32,34 +32,36 @@ const HomePage = () => {
 
   // Generate query params based on active filters
   const filterParams = useMemo(() => {
-    return { 
-      veg: filterVeg, 
-      rating: filterRating ? 4.0 : undefined 
-    };
-  }, [filterVeg, filterRating]);
+    const params: { veg?: boolean, rating?: number, category?: string } = {};
+    
+    if (filterVeg) {
+      params.veg = true;
+    }
+    
+    if (filterRating) {
+      params.rating = 4.0;
+    }
+    
+    if (filterCategory) {
+      params.category = filterCategory;
+    }
+    
+    return params;
+  }, [filterVeg, filterRating, filterCategory]);
   
   // Fetch all restaurants with filters
   const { data: allRestaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants", filterParams],
   });
   
-  // Process restaurants for filters (fast delivery & category)
+  // Process restaurants for fast delivery filter only
+  // (category, veg, and rating filters are handled server-side)
   const filteredRestaurants = useMemo(() => {
     if (!allRestaurants) return [];
     
     let restaurants = [...allRestaurants];
     
-    // Apply category filter if enabled
-    if (filterCategory) {
-      restaurants = restaurants.filter(restaurant => 
-        restaurant.cuisine_types && 
-        restaurant.cuisine_types.some(cuisine => 
-          cuisine.toLowerCase() === filterCategory.toLowerCase()
-        )
-      );
-    }
-    
-    // Apply fastest delivery filter if enabled
+    // Apply fastest delivery filter if enabled (client-side)
     if (filterFastDelivery) {
       restaurants = restaurants.sort((a, b) => {
         return (a.delivery_time || 30) - (b.delivery_time || 30);
@@ -67,7 +69,7 @@ const HomePage = () => {
     }
     
     return restaurants;
-  }, [allRestaurants, filterFastDelivery, filterCategory]);
+  }, [allRestaurants, filterFastDelivery]);
 
   // Fetch all menu items for search
   const { data: allMenuItems } = useQuery<MenuItem[]>({
