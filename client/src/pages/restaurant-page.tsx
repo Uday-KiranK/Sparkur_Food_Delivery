@@ -4,15 +4,17 @@ import { useParams, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
-import { Restaurant, MenuItem, Category } from "@shared/schema";
+import { Restaurant, MenuItem, Category, UserRole } from "@shared/schema";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 const RestaurantPage = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { addItem } = useCart();
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
   // Fetch restaurant details
@@ -47,6 +49,26 @@ const RestaurantPage = () => {
 
   const handleAddToCart = (item: MenuItem) => {
     if (!restaurant) return;
+    
+    // Only allow customers to add items to cart
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to log in as a customer to add items to cart.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    if (user.role !== UserRole.CUSTOMER) {
+      toast({
+        title: "Access Denied",
+        description: "Only customers can add items to cart.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     addItem({
       id: item.id,

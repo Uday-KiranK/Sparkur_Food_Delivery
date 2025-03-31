@@ -310,29 +310,31 @@ const Header = () => {
               )}
             </div>
 
-            {/* Cart Button with Dropdown */}
-            <div className="relative" ref={cartDropdownRef}>
-              <button 
-                ref={cartButtonRef}
-                className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors"
-                onClick={() => {
-                  setCartDropdownOpen(!cartDropdownOpen);
-                  setLoginDropdownOpen(false);
-                }}
-              >
-                <i className="bi bi-cart3 mr-1"></i>
-                <span className="hidden md:inline">Cart</span>
-                {totalItems > 0 && (
-                  <span className="bg-[#FC8019] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-1">
-                    {totalItems}
-                  </span>
+            {/* Cart Button with Dropdown - Only show to logged-in customers */}
+            {user && user.role === UserRole.CUSTOMER && (
+              <div className="relative" ref={cartDropdownRef}>
+                <button 
+                  ref={cartButtonRef}
+                  className="flex items-center px-2 py-1.5 hover:text-[#FC8019] transition-colors"
+                  onClick={() => {
+                    setCartDropdownOpen(!cartDropdownOpen);
+                    setLoginDropdownOpen(false);
+                  }}
+                >
+                  <i className="bi bi-cart3 mr-1"></i>
+                  <span className="hidden md:inline">Cart</span>
+                  {totalItems > 0 && (
+                    <span className="bg-[#FC8019] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-1">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+                
+                {cartDropdownOpen && (
+                  <CartDropdown onClose={() => setCartDropdownOpen(false)} />
                 )}
-              </button>
-              
-              {cartDropdownOpen && (
-                <CartDropdown onClose={() => setCartDropdownOpen(false)} />
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -405,6 +407,23 @@ const Header = () => {
                   >
                     <i className="bi bi-speedometer2 mr-2"></i>
                     <span>Dashboard</span>
+                  </Link>
+                </li>
+              )}
+              {user && user.role === UserRole.CUSTOMER && (
+                <li>
+                  <Link 
+                    href="/checkout" 
+                    className="flex items-center py-2 hover:text-[#FC8019] transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <i className="bi bi-cart3 mr-2"></i>
+                    <span>Cart</span>
+                    {totalItems > 0 && (
+                      <span className="bg-[#FC8019] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-1">
+                        {totalItems}
+                      </span>
+                    )}
                   </Link>
                 </li>
               )}

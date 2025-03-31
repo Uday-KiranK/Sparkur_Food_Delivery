@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@shared/schema";
 
 const checkoutSchema = z.object({
   delivery_address: z.string().min(5, "Please enter a complete delivery address"),
@@ -25,6 +26,18 @@ const CheckoutPage = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  
+  // Redirect non-customer users away from checkout
+  useEffect(() => {
+    if (user && user.role !== UserRole.CUSTOMER) {
+      toast({
+        title: "Access Denied",
+        description: "Only customers can place orders.",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [user, navigate, toast]);
 
   const {
     register,
@@ -86,6 +99,27 @@ const CheckoutPage = () => {
   }
 
   const onSubmit = (data: CheckoutFormData) => {
+    // Check if user is logged in and is a customer
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to log in as a customer to place an order.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (user.role !== UserRole.CUSTOMER) {
+      toast({
+        title: "Access Denied",
+        description: "Only customers can place orders.",
+        variant: "destructive",
+      });
+      navigate("/");
+      return;
+    }
+    
     if (items.length === 0) {
       toast({
         title: "Cart is empty",
