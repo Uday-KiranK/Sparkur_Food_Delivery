@@ -38,7 +38,7 @@ export function setupAuth(app: Express) {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-    }
+    },
   };
 
   app.set("trust proxy", 1);
@@ -74,11 +74,13 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       // Check if username already exists
-      const existingUserByUsername = await storage.getUserByUsername(req.body.username);
+      const existingUserByUsername = await storage.getUserByUsername(
+        req.body.username,
+      );
       if (existingUserByUsername) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      
+
       // Check if email already exists
       const existingUserByEmail = await storage.getUserByEmail(req.body.email);
       if (existingUserByEmail) {
@@ -96,15 +98,20 @@ export function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("Registration error:", error);
-      return res.status(500).json({ message: "Registration failed. Please try again." });
+      return res
+        .status(500)
+        .json({ message: "Registration failed. Please try again." });
     }
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
-      if (!user) return res.status(401).json({ message: "Invalid username or password" });
-      
+      if (!user)
+        return res
+          .status(401)
+          .json({ message: "Invalid username or password" });
+
       req.login(user, (err) => {
         if (err) return next(err);
         res.status(200).json(user);
@@ -123,25 +130,28 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
-  
+
   app.patch("/api/user/:id", async (req, res, next) => {
     try {
-      if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
-      
+      if (!req.isAuthenticated())
+        return res.status(401).json({ message: "Unauthorized" });
+
       // Only allow users to update their own profile
       const userId = parseInt(req.params.id);
       if (req.user?.id !== userId) {
-        return res.status(403).json({ message: "Forbidden: You can only update your own profile" });
+        return res
+          .status(403)
+          .json({ message: "Forbidden: You can only update your own profile" });
       }
-      
+
       // Prevent updating password or role through this endpoint
       const { password, role, ...updateData } = req.body;
-      
+
       const updatedUser = await storage.updateUser(userId, updateData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       res.json(updatedUser);
     } catch (error) {
       next(error);

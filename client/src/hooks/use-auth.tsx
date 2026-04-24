@@ -4,7 +4,12 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser, LoginData } from "@shared/schema";
+import {
+  insertUserSchema,
+  User as SelectUser,
+  InsertUser,
+  LoginData,
+} from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -23,7 +28,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  
+
   const {
     data: user,
     error,
@@ -37,13 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       try {
         const res = await apiRequest("POST", "/api/login", credentials);
-        
+
         // Handle authentication errors from the server (status 401)
         if (res.status === 401) {
           const errorData = await res.json();
           throw new Error(errorData.message || "Invalid username or password");
         }
-        
+
         return await res.json();
       } catch (error) {
         if (error instanceof Error) {
@@ -63,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        description:
+          error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     },
@@ -73,13 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: InsertUser) => {
       try {
         const res = await apiRequest("POST", "/api/register", credentials);
-        
+
         // Handle validation errors from the server (status 400)
         if (res.status === 400) {
           const errorData = await res.json();
-          throw new Error(errorData.message || "Registration failed. Please try again.");
+          throw new Error(
+            errorData.message || "Registration failed. Please try again.",
+          );
         }
-        
+
         return await res.json();
       } catch (error) {
         if (error instanceof Error) {
@@ -99,7 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message || "Please check your information and try again.",
+        description:
+          error.message || "Please check your information and try again.",
         variant: "destructive",
       });
     },

@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 import { CartItem, OrderItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,26 +50,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = (item: CartItem) => {
     setItems((currentItems) => {
       // Check if we're adding from a different restaurant
-      const existingRestaurantId = currentItems.length > 0 ? currentItems[0].restaurant_id : null;
-      
+      const existingRestaurantId =
+        currentItems.length > 0 ? currentItems[0].restaurant_id : null;
+
       if (existingRestaurantId && existingRestaurantId !== item.restaurant_id) {
         toast({
           title: "Can't mix restaurants",
-          description: "Your cart contains items from a different restaurant. Clear your cart first.",
+          description:
+            "Your cart contains items from a different restaurant. Clear your cart first.",
           variant: "destructive",
         });
         return currentItems;
       }
-      
+
       // Check if item already exists in cart
       const existingItem = currentItems.find((i) => i.id === item.id);
-      
+
       if (existingItem) {
         // Update quantity if item exists
         return currentItems.map((i) =>
-          i.id === item.id
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
+          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i,
         );
       } else {
         // Add new item
@@ -81,17 +87,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem(itemId);
       return;
     }
-    
+
     setItems((currentItems) =>
       currentItems.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
-      )
+        item.id === itemId ? { ...item, quantity } : item,
+      ),
     );
   };
 
   const removeItem = (itemId: number) => {
-    setItems((currentItems) => currentItems.filter((item) => item.id !== itemId));
-    
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id !== itemId),
+    );
+
     toast({
       title: "Item removed",
       description: "Item has been removed from your cart.",
@@ -107,14 +115,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
+
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
-  
+
   const total = subtotal + (items.length > 0 ? DELIVERY_FEE : 0);
-  
+
   const canCheckout = items.length > 0;
 
   const value = {

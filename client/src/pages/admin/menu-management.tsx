@@ -4,7 +4,14 @@ import { Loader2, X, Plus } from "lucide-react";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
 import { useAuth } from "@/hooks/use-auth";
-import { Restaurant, MenuItem, Category, UserRole, insertMenuItemSchema, insertCategorySchema } from "@shared/schema";
+import {
+  Restaurant,
+  MenuItem,
+  Category,
+  UserRole,
+  insertMenuItemSchema,
+  insertCategorySchema,
+} from "@shared/schema";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -40,10 +47,14 @@ const MenuManagement = () => {
 
   // Get restaurant ID from URL (if any)
   const urlParams = new URLSearchParams(window.location.search);
-  const selectedRestaurantId = urlParams.get('restaurantId') ? Number(urlParams.get('restaurantId')) : undefined;
+  const selectedRestaurantId = urlParams.get("restaurantId")
+    ? Number(urlParams.get("restaurantId"))
+    : undefined;
 
   // Fetch restaurant info - only those owned by this admin
-  const { data: restaurants, isLoading: isRestaurantsLoading } = useQuery<Restaurant[]>({
+  const { data: restaurants, isLoading: isRestaurantsLoading } = useQuery<
+    Restaurant[]
+  >({
     queryKey: ["/api/restaurants", "admin"],
     queryFn: async () => {
       const res = await fetch("/api/restaurants?admin=true");
@@ -54,18 +65,22 @@ const MenuManagement = () => {
   });
 
   // Select the restaurant from URL param or first available
-  const restaurant = selectedRestaurantId 
-    ? restaurants?.find(r => r.id === selectedRestaurantId) 
+  const restaurant = selectedRestaurantId
+    ? restaurants?.find((r) => r.id === selectedRestaurantId)
     : restaurants?.[0];
 
   // Fetch menu categories
-  const { data: categories, isLoading: isCategoriesLoading } = useQuery<Category[]>({
+  const { data: categories, isLoading: isCategoriesLoading } = useQuery<
+    Category[]
+  >({
     queryKey: [`/api/restaurants/${restaurant?.id}/categories`],
     enabled: !!restaurant,
   });
 
   // Fetch menu items
-  const { data: menuItems, isLoading: isMenuItemsLoading } = useQuery<MenuItem[]>({
+  const { data: menuItems, isLoading: isMenuItemsLoading } = useQuery<
+    MenuItem[]
+  >({
     queryKey: [`/api/restaurants/${restaurant?.id}/menu`],
     enabled: !!restaurant,
   });
@@ -110,7 +125,7 @@ const MenuManagement = () => {
       restaurant_id: undefined,
     },
   });
-  
+
   // Update restaurant_id in forms when restaurant changes
   useEffect(() => {
     if (restaurant) {
@@ -140,7 +155,11 @@ const MenuManagement = () => {
       console.log("Creating menu item with data:", data);
       console.log("Restaurant ID:", restaurant.id);
       try {
-        const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/menu`, data);
+        const res = await apiRequest(
+          "POST",
+          `/api/restaurants/${restaurant.id}/menu`,
+          data,
+        );
         const jsonResult = await res.json();
         console.log("API response:", jsonResult);
         return jsonResult;
@@ -155,7 +174,9 @@ const MenuManagement = () => {
         title: "Success",
         description: "Menu item added successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurant?.id}/menu`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/restaurants/${restaurant?.id}/menu`],
+      });
       resetMenuItem();
       setShowAddItem(false);
     },
@@ -171,7 +192,13 @@ const MenuManagement = () => {
 
   // Update menu item mutation
   const updateMenuItemMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<MenuItemForm> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<MenuItemForm>;
+    }) => {
       const res = await apiRequest("PUT", `/api/menu-items/${id}`, data);
       return await res.json();
     },
@@ -180,7 +207,9 @@ const MenuManagement = () => {
         title: "Success",
         description: "Menu item updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurant?.id}/menu`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/restaurants/${restaurant?.id}/menu`],
+      });
       resetMenuItem();
       setShowAddItem(false);
       setEditingItem(null);
@@ -205,7 +234,9 @@ const MenuManagement = () => {
         title: "Success",
         description: "Menu item deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurant?.id}/menu`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/restaurants/${restaurant?.id}/menu`],
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -223,7 +254,11 @@ const MenuManagement = () => {
       console.log("Creating category with data:", data);
       console.log("Restaurant ID:", restaurant.id);
       try {
-        const res = await apiRequest("POST", `/api/restaurants/${restaurant.id}/categories`, data);
+        const res = await apiRequest(
+          "POST",
+          `/api/restaurants/${restaurant.id}/categories`,
+          data,
+        );
         const jsonResult = await res.json();
         console.log("API response for category:", jsonResult);
         return jsonResult;
@@ -238,7 +273,9 @@ const MenuManagement = () => {
         title: "Success",
         description: "Category added successfully",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurant?.id}/categories`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/restaurants/${restaurant?.id}/categories`],
+      });
       resetCategory();
       setShowAddCategory(false);
     },
@@ -261,27 +298,33 @@ const MenuManagement = () => {
       });
       return;
     }
-    
+
     console.log("Submitting menu item, restaurant ID:", restaurant.id);
     console.log("Form data:", data);
-    
+
     try {
       // Prepare the data
       const preparedData = {
         ...data,
         restaurant_id: restaurant.id,
         // Ensure numeric values
-        price: typeof data.price === 'string' ? parseFloat(data.price) : data.price,
-        category_id: data.category_id ? 
-          (typeof data.category_id === 'string' ? parseInt(data.category_id) : data.category_id) 
-          : null
+        price:
+          typeof data.price === "string" ? parseFloat(data.price) : data.price,
+        category_id: data.category_id
+          ? typeof data.category_id === "string"
+            ? parseInt(data.category_id)
+            : data.category_id
+          : null,
       };
-      
+
       console.log("Prepared menu item data:", preparedData);
-      
+
       // If editing, update the item
       if (editingItem) {
-        updateMenuItemMutation.mutate({ id: editingItem.id, data: preparedData });
+        updateMenuItemMutation.mutate({
+          id: editingItem.id,
+          data: preparedData,
+        });
       } else {
         // Create new item
         createMenuItemMutation.mutate(preparedData);
@@ -305,19 +348,22 @@ const MenuManagement = () => {
       });
       return;
     }
-    
+
     console.log("Submitting category, restaurant ID:", restaurant.id);
     console.log("Category form data:", data);
-    
+
     try {
       // Prepare the data
       const preparedData = {
         ...data,
-        restaurant_id: typeof restaurant.id === 'string' ? parseInt(restaurant.id) : restaurant.id
+        restaurant_id:
+          typeof restaurant.id === "string"
+            ? parseInt(restaurant.id)
+            : restaurant.id,
       };
-      
+
       console.log("Prepared category data:", preparedData);
-      
+
       createCategoryMutation.mutate(preparedData);
     } catch (error) {
       console.error("Error preparing category data:", error);
@@ -356,7 +402,9 @@ const MenuManagement = () => {
             <div className="bg-white rounded-lg shadow-sm p-6 text-center">
               <i className="bi bi-shop text-5xl text-gray-400 mb-4"></i>
               <h2 className="text-2xl font-bold mb-2">No Restaurant Found</h2>
-              <p className="text-[#686b78] mb-4">You need to create a restaurant first.</p>
+              <p className="text-[#686b78] mb-4">
+                You need to create a restaurant first.
+              </p>
               <button
                 onClick={() => navigate("/admin/restaurant")}
                 className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
@@ -374,7 +422,7 @@ const MenuManagement = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <div className="flex-grow bg-[#f2f2f2] py-8">
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -383,9 +431,9 @@ const MenuManagement = () => {
                 <h1 className="text-2xl font-bold">Menu Management</h1>
                 <p className="text-[#686b78]">{restaurant.name}</p>
               </div>
-              
+
               <div className="flex space-x-4">
-                <button 
+                <button
                   className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
                   onClick={() => {
                     resetMenuItem();
@@ -394,14 +442,16 @@ const MenuManagement = () => {
                     setShowAddCategory(false);
                   }}
                 >
-                  {showAddItem ? "Cancel" : (
+                  {showAddItem ? (
+                    "Cancel"
+                  ) : (
                     <>
                       <i className="bi bi-plus-lg mr-2"></i>
                       Add Menu Item
                     </>
                   )}
                 </button>
-                <button 
+                <button
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
                   onClick={() => {
                     resetCategory();
@@ -409,14 +459,16 @@ const MenuManagement = () => {
                     setShowAddItem(false);
                   }}
                 >
-                  {showAddCategory ? "Cancel" : (
+                  {showAddCategory ? (
+                    "Cancel"
+                  ) : (
                     <>
                       <i className="bi bi-folder-plus mr-2"></i>
                       Add Category
                     </>
                   )}
                 </button>
-                <button 
+                <button
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
                   onClick={() => navigate("/admin/restaurant")}
                 >
@@ -425,113 +477,150 @@ const MenuManagement = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Add Menu Item Form */}
           {showAddItem && (
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">{editingItem ? "Edit Menu Item" : "Add New Menu Item"}</h2>
-              
-              <form onSubmit={handleSubmitMenuItem(onSubmitMenuItem)} className="space-y-4">
+              <h2 className="text-xl font-bold mb-4">
+                {editingItem ? "Edit Menu Item" : "Add New Menu Item"}
+              </h2>
+
+              <form
+                onSubmit={handleSubmitMenuItem(onSubmitMenuItem)}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Item Name*</label>
-                    <input 
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Item Name*
+                    </label>
+                    <input
                       type="text"
                       {...registerMenuItem("name")}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                       placeholder="e.g. Chicken Biryani"
                     />
                     {menuItemErrors.name && (
-                      <p className="text-red-500 text-xs mt-1">{menuItemErrors.name.message}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {menuItemErrors.name.message}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)*</label>
-                    <input 
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Price (₹)*
+                    </label>
+                    <input
                       type="number"
                       {...registerMenuItem("price", { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                       placeholder="e.g. 250"
                     />
                     {menuItemErrors.price && (
-                      <p className="text-red-500 text-xs mt-1">{menuItemErrors.price.message}</p>
+                      <p className="text-red-500 text-xs mt-1">
+                        {menuItemErrors.price.message}
+                      </p>
                     )}
                   </div>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description*</label>
-                  <textarea 
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description*
+                  </label>
+                  <textarea
                     {...registerMenuItem("description")}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                     placeholder="Describe your dish..."
                   ></textarea>
                   {menuItemErrors.description && (
-                    <p className="text-red-500 text-xs mt-1">{menuItemErrors.description.message}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {menuItemErrors.description.message}
+                    </p>
                   )}
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (optional)</label>
-                  <input 
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Image URL (optional)
+                  </label>
+                  <input
                     type="text"
                     {...registerMenuItem("image_url")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                     placeholder="http://example.com/image.jpg"
                   />
                   {menuItemErrors.image_url && (
-                    <p className="text-red-500 text-xs mt-1">{menuItemErrors.image_url.message}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {menuItemErrors.image_url.message}
+                    </p>
                   )}
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select 
-                    {...registerMenuItem("category_id", { valueAsNumber: true })}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <select
+                    {...registerMenuItem("category_id", {
+                      valueAsNumber: true,
+                    })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                   >
                     <option value="">-- Select Category --</option>
                     {categories?.map((category) => (
-                      <option key={category.id} value={category.id}>{category.name}</option>
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center">
-                    <input 
+                    <input
                       type="checkbox"
                       id="is_veg"
                       {...registerMenuItem("is_veg")}
                       className="h-4 w-4 text-[#FC8019] focus:ring-[#FC8019] border-gray-300 rounded"
                     />
-                    <label htmlFor="is_veg" className="ml-2 block text-sm text-gray-700">
+                    <label
+                      htmlFor="is_veg"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
                       Vegetarian
                     </label>
                   </div>
-                  
+
                   <div className="flex items-center">
-                    <input 
+                    <input
                       type="checkbox"
                       id="is_available"
                       {...registerMenuItem("is_available")}
                       className="h-4 w-4 text-[#FC8019] focus:ring-[#FC8019] border-gray-300 rounded"
                     />
-                    <label htmlFor="is_available" className="ml-2 block text-sm text-gray-700">
+                    <label
+                      htmlFor="is_available"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
                       Available
                     </label>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
                     className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors flex items-center"
-                    disabled={createMenuItemMutation.isPending || updateMenuItemMutation.isPending}
+                    disabled={
+                      createMenuItemMutation.isPending ||
+                      updateMenuItemMutation.isPending
+                    }
                   >
-                    {(createMenuItemMutation.isPending || updateMenuItemMutation.isPending) && (
+                    {(createMenuItemMutation.isPending ||
+                      updateMenuItemMutation.isPending) && (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     )}
                     {editingItem ? "Update Item" : "Add Item"}
@@ -540,26 +629,33 @@ const MenuManagement = () => {
               </form>
             </div>
           )}
-          
+
           {/* Add Category Form */}
           {showAddCategory && (
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Add New Category</h2>
-              
-              <form onSubmit={handleSubmitCategory(onSubmitCategory)} className="space-y-4">
+
+              <form
+                onSubmit={handleSubmitCategory(onSubmitCategory)}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category Name*</label>
-                  <input 
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category Name*
+                  </label>
+                  <input
                     type="text"
                     {...registerCategory("name")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
                     placeholder="e.g. Starters, Main Course, Desserts"
                   />
                   {categoryErrors.name && (
-                    <p className="text-red-500 text-xs mt-1">{categoryErrors.name.message}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {categoryErrors.name.message}
+                    </p>
                   )}
                 </div>
-                
+
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
@@ -575,30 +671,30 @@ const MenuManagement = () => {
               </form>
             </div>
           )}
-          
+
           {/* Categories and Menu Items */}
           <div className="flex flex-col md:flex-row gap-6">
             {/* Categories Sidebar */}
             <div className="md:w-1/4">
               <div className="bg-white rounded-lg shadow-sm p-4">
                 <h2 className="text-lg font-bold mb-3">Categories</h2>
-                
+
                 {isCategoriesLoading ? (
                   <div className="flex justify-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
                   </div>
                 ) : (
                   <div>
-                    <button 
+                    <button
                       className={`w-full text-left py-2 px-3 rounded-md mb-1 ${selectedCategory === null ? "bg-[#fef0e6] text-[#FC8019]" : "hover:bg-gray-100"}`}
                       onClick={() => setSelectedCategory(null)}
                     >
                       All Items
                     </button>
-                    
+
                     {categories && categories.length > 0 ? (
                       categories.map((category) => (
-                        <button 
+                        <button
                           key={category.id}
                           className={`w-full text-left py-2 px-3 rounded-md mb-1 ${selectedCategory === category.id ? "bg-[#fef0e6] text-[#FC8019]" : "hover:bg-gray-100"}`}
                           onClick={() => setSelectedCategory(category.id)}
@@ -608,23 +704,24 @@ const MenuManagement = () => {
                       ))
                     ) : (
                       <p className="text-[#686b78] text-sm py-2">
-                        No categories found. Add a category to organize your menu.
+                        No categories found. Add a category to organize your
+                        menu.
                       </p>
                     )}
                   </div>
                 )}
               </div>
             </div>
-            
+
             {/* Menu Items */}
             <div className="md:w-3/4">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-lg font-bold mb-4">
-                  {selectedCategory 
-                    ? `${categories?.find(c => c.id === selectedCategory)?.name} Items` 
+                  {selectedCategory
+                    ? `${categories?.find((c) => c.id === selectedCategory)?.name} Items`
                     : "All Menu Items"}
                 </h2>
-                
+
                 {isMenuItemsLoading ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-[#FC8019]" />
@@ -632,7 +729,10 @@ const MenuManagement = () => {
                 ) : filteredMenuItems && filteredMenuItems.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredMenuItems.map((item) => (
-                      <div key={item.id} className="border border-gray-200 rounded-lg p-4 flex justify-between hover:border-[#FC8019] transition-colors">
+                      <div
+                        key={item.id}
+                        className="border border-gray-200 rounded-lg p-4 flex justify-between hover:border-[#FC8019] transition-colors"
+                      >
                         <div>
                           <div className="flex items-center">
                             {item.is_veg ? (
@@ -647,34 +747,36 @@ const MenuManagement = () => {
                             <h3 className="font-bold">{item.name}</h3>
                           </div>
                           <p className="text-[#686b78] mb-1">₹{item.price}</p>
-                          <p className="text-sm text-[#93959f] line-clamp-2">{item.description}</p>
-                          
+                          <p className="text-sm text-[#93959f] line-clamp-2">
+                            {item.description}
+                          </p>
+
                           {!item.is_available && (
                             <span className="inline-block mt-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
                               Not Available
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="ml-4 flex flex-col items-end">
                           {item.image_url && (
                             <div className="w-16 h-16 rounded-lg overflow-hidden mb-2">
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name} 
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
                                 className="w-full h-full object-cover"
                               />
                             </div>
                           )}
-                          
+
                           <div className="flex space-x-2">
-                            <button 
+                            <button
                               className="p-1 text-blue-600 hover:text-blue-800"
                               onClick={() => setEditingItem(item)}
                             >
                               <i className="bi bi-pencil"></i>
                             </button>
-                            <button 
+                            <button
                               className="p-1 text-red-600 hover:text-red-800"
                               onClick={() => handleDeleteMenuItem(item.id)}
                               disabled={deleteMenuItemMutation.isPending}
@@ -695,11 +797,11 @@ const MenuManagement = () => {
                     <i className="bi bi-inboxes text-5xl text-gray-400 mb-4"></i>
                     <h3 className="text-xl font-bold mb-2">No Menu Items</h3>
                     <p className="text-[#686b78] mb-4">
-                      {selectedCategory 
+                      {selectedCategory
                         ? "No items in this category. Add some items to get started."
                         : "Your menu is empty. Add some delicious items to get started."}
                     </p>
-                    <button 
+                    <button
                       className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors"
                       onClick={() => {
                         resetMenuItem();
@@ -718,7 +820,7 @@ const MenuManagement = () => {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

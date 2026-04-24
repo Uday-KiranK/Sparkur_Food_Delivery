@@ -6,7 +6,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -43,7 +49,7 @@ const LoginDropdown = () => {
         <h3 className="font-semibold text-lg mb-3">
           {isRegisterView ? "Create an account" : "Login to your account"}
         </h3>
-        
+
         {isRegisterView ? (
           <>
             <Link href="/auth">
@@ -52,7 +58,7 @@ const LoginDropdown = () => {
               </button>
             </Link>
             <div className="mt-3 text-center">
-              <button 
+              <button
                 onClick={() => setIsRegisterView(false)}
                 className="text-[#FC8019] text-sm font-medium"
               >
@@ -63,7 +69,10 @@ const LoginDropdown = () => {
         ) : (
           <>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-3"
+              >
                 <FormField
                   control={form.control}
                   name="username"
@@ -82,15 +91,19 @@ const LoginDropdown = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Input type="password" placeholder="Password" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="Password"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   className="w-full bg-[#FC8019] hover:bg-[#e67016]"
                   disabled={loginMutation.isPending}
                 >
@@ -101,9 +114,9 @@ const LoginDropdown = () => {
                 </Button>
               </form>
             </Form>
-            
+
             <div className="mt-3 text-center">
-              <button 
+              <button
                 onClick={() => setIsRegisterView(true)}
                 className="text-[#FC8019] text-sm font-medium"
               >
@@ -112,9 +125,16 @@ const LoginDropdown = () => {
             </div>
           </>
         )}
-        
+
         <div className="mt-3 text-xs text-center text-[#686b78]">
-          By clicking on Login/Register, I accept the <a href="#" className="text-[#FC8019]">Terms & Conditions</a> & <a href="#" className="text-[#FC8019]">Privacy Policy</a>
+          By clicking on Login/Register, I accept the{" "}
+          <a href="#" className="text-[#FC8019]">
+            Terms & Conditions
+          </a>{" "}
+          &{" "}
+          <a href="#" className="text-[#FC8019]">
+            Privacy Policy
+          </a>
         </div>
       </div>
     </div>

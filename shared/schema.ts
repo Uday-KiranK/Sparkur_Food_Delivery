@@ -1,4 +1,13 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp, real } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  jsonb,
+  timestamp,
+  real,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -9,7 +18,7 @@ export const UserRole = {
   DELIVERY_PARTNER: "delivery_partner",
 } as const;
 
-export type UserRoleType = typeof UserRole[keyof typeof UserRole];
+export type UserRoleType = (typeof UserRole)[keyof typeof UserRole];
 
 // Order status
 export const OrderStatus = {
@@ -22,7 +31,7 @@ export const OrderStatus = {
   CANCELLED: "cancelled",
 } as const;
 
-export type OrderStatusType = typeof OrderStatus[keyof typeof OrderStatus];
+export type OrderStatusType = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 // Users table
 export const users = pgTable("users", {
@@ -48,7 +57,9 @@ export const restaurants = pgTable("restaurants", {
   rating: real("rating").default(0),
   delivery_time: integer("delivery_time").notNull(), // minutes
   price_for_two: integer("price_for_two").notNull(), // in rupees
-  admin_id: integer("admin_id").notNull().references(() => users.id),
+  admin_id: integer("admin_id")
+    .notNull()
+    .references(() => users.id),
   is_veg: boolean("is_veg").default(false),
   created_at: timestamp("created_at").defaultNow(),
 });
@@ -57,7 +68,9 @@ export const restaurants = pgTable("restaurants", {
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  restaurant_id: integer("restaurant_id").notNull().references(() => restaurants.id),
+  restaurant_id: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id),
 });
 
 // Menu items
@@ -69,20 +82,31 @@ export const menu_items = pgTable("menu_items", {
   image_url: text("image_url"),
   is_veg: boolean("is_veg").default(false),
   category_id: integer("category_id").references(() => categories.id),
-  restaurant_id: integer("restaurant_id").notNull().references(() => restaurants.id),
+  restaurant_id: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id),
   is_available: boolean("is_available").default(true),
 });
 
 // Orders
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
-  user_id: integer("user_id").notNull().references(() => users.id),
-  restaurant_id: integer("restaurant_id").notNull().references(() => restaurants.id),
+  user_id: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  restaurant_id: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id),
   items: jsonb("items").notNull(), // Array of menu items with quantities
   total_amount: integer("total_amount").notNull(),
   delivery_address: text("delivery_address").notNull(),
-  status: text("status").notNull().$type<OrderStatusType>().default(OrderStatus.PENDING),
-  delivery_partner_id: integer("delivery_partner_id").references(() => users.id),
+  status: text("status")
+    .notNull()
+    .$type<OrderStatusType>()
+    .default(OrderStatus.PENDING),
+  delivery_partner_id: integer("delivery_partner_id").references(
+    () => users.id,
+  ),
   order_time: timestamp("order_time").defaultNow(),
   delivery_time: timestamp("delivery_time"),
   special_instructions: text("special_instructions"),
@@ -96,12 +120,28 @@ export const food_categories = pgTable("food_categories", {
 });
 
 // Schemas for validation and insertion
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, created_at: true });
-export const insertRestaurantSchema = createInsertSchema(restaurants).omit({ id: true, created_at: true });
-export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
-export const insertMenuItemSchema = createInsertSchema(menu_items).omit({ id: true });
-export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, order_time: true, delivery_time: true });
-export const insertFoodCategorySchema = createInsertSchema(food_categories).omit({ id: true });
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  created_at: true,
+});
+export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
+  id: true,
+  created_at: true,
+});
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+});
+export const insertMenuItemSchema = createInsertSchema(menu_items).omit({
+  id: true,
+});
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  order_time: true,
+  delivery_time: true,
+});
+export const insertFoodCategorySchema = createInsertSchema(
+  food_categories,
+).omit({ id: true });
 
 // Types
 export type User = typeof users.$inferSelect;

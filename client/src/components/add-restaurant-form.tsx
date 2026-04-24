@@ -13,7 +13,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 const createRestaurantSchema = insertRestaurantSchema
   .omit({ admin_id: true }) // admin_id will be added on the server
   .extend({
-    cuisine_types: z.string().min(3, "Cuisine types must be at least 3 characters"),
+    cuisine_types: z
+      .string()
+      .min(3, "Cuisine types must be at least 3 characters"),
   });
 
 type CreateRestaurantFormData = z.infer<typeof createRestaurantSchema> & {
@@ -38,7 +40,8 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
       address: "",
       phone: "",
       cuisine_types: "",
-      image_url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop",
+      image_url:
+        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop",
       price_for_two: 300,
       delivery_time: 30,
       is_veg: false,
@@ -48,15 +51,17 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
   const createRestaurantMutation = useMutation({
     mutationFn: async (data: CreateRestaurantFormData) => {
       // Convert cuisine_types from string to array
-      const cuisineTypesArray = data.cuisine_types.split(",").map(cuisine => cuisine.trim());
-      
+      const cuisineTypesArray = data.cuisine_types
+        .split(",")
+        .map((cuisine) => cuisine.trim());
+
       const restaurantData = {
         ...data,
         cuisine_types: cuisineTypesArray,
         price_for_two: Number(data.price_for_two),
         delivery_time: Number(data.delivery_time),
       };
-      
+
       const res = await apiRequest("POST", "/api/restaurants", restaurantData);
       return await res.json();
     },
@@ -65,7 +70,9 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
         title: "Success",
         description: "Restaurant created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/restaurants", "admin"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/restaurants", "admin"],
+      });
       if (onSuccess) onSuccess();
     },
     onError: (error: Error) => {
@@ -90,11 +97,13 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h2 className="text-2xl font-bold mb-4">Create New Restaurant</h2>
-      
+
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Restaurant Name *
+            </label>
             <input
               type="text"
               {...form.register("name")}
@@ -102,12 +111,16 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
               placeholder="Enter restaurant name"
             />
             {form.formState.errors.name && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {form.formState.errors.name.message}
+              </p>
             )}
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number *
+            </label>
             <input
               type="tel"
               {...form.register("phone")}
@@ -115,13 +128,17 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
               placeholder="Enter phone number"
             />
             {form.formState.errors.phone && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.phone.message}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {form.formState.errors.phone.message}
+              </p>
             )}
           </div>
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Address *
+          </label>
           <input
             type="text"
             {...form.register("address")}
@@ -129,12 +146,16 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
             placeholder="Enter restaurant address"
           />
           {form.formState.errors.address && (
-            <p className="text-red-500 text-xs mt-1">{form.formState.errors.address.message}</p>
+            <p className="text-red-500 text-xs mt-1">
+              {form.formState.errors.address.message}
+            </p>
           )}
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description *
+          </label>
           <textarea
             {...form.register("description")}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FC8019]"
@@ -142,13 +163,17 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
             rows={3}
           />
           {form.formState.errors.description && (
-            <p className="text-red-500 text-xs mt-1">{form.formState.errors.description.message}</p>
+            <p className="text-red-500 text-xs mt-1">
+              {form.formState.errors.description.message}
+            </p>
           )}
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine Types *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cuisine Types *
+            </label>
             <input
               type="text"
               {...form.register("cuisine_types")}
@@ -156,12 +181,16 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
               placeholder="E.g. Italian, Chinese, Indian (comma separated)"
             />
             {form.formState.errors.cuisine_types && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.cuisine_types.message}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {form.formState.errors.cuisine_types.message}
+              </p>
             )}
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Restaurant Type
+            </label>
             <div className="flex items-center space-x-2 h-[42px]">
               <input
                 type="checkbox"
@@ -173,10 +202,12 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price for Two (₹) *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Price for Two (₹) *
+            </label>
             <input
               type="number"
               {...form.register("price_for_two", { valueAsNumber: true })}
@@ -185,12 +216,16 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
               min={1}
             />
             {form.formState.errors.price_for_two && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.price_for_two.message}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {form.formState.errors.price_for_two.message}
+              </p>
             )}
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Time (minutes) *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Delivery Time (minutes) *
+            </label>
             <input
               type="number"
               {...form.register("delivery_time", { valueAsNumber: true })}
@@ -199,13 +234,17 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
               min={5}
             />
             {form.formState.errors.delivery_time && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.delivery_time.message}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {form.formState.errors.delivery_time.message}
+              </p>
             )}
           </div>
         </div>
-        
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Image URL *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Restaurant Image URL *
+          </label>
           <input
             type="text"
             {...form.register("image_url")}
@@ -214,22 +253,24 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
             onChange={handleImageChange}
           />
           {form.formState.errors.image_url && (
-            <p className="text-red-500 text-xs mt-1">{form.formState.errors.image_url.message}</p>
+            <p className="text-red-500 text-xs mt-1">
+              {form.formState.errors.image_url.message}
+            </p>
           )}
-          
+
           {imagePreview && (
             <div className="mt-2">
               <p className="text-sm text-gray-600 mb-1">Image Preview:</p>
-              <img 
-                src={imagePreview} 
-                alt="Restaurant preview" 
+              <img
+                src={imagePreview}
+                alt="Restaurant preview"
                 className="h-32 w-full object-cover rounded-md"
                 onError={() => setImagePreview(null)}
               />
             </div>
           )}
         </div>
-        
+
         <div className="flex justify-end space-x-4 pt-4">
           {onCancel && (
             <button
@@ -240,7 +281,7 @@ const AddRestaurantForm = ({ onSuccess, onCancel }: AddRestaurantFormProps) => {
               Cancel
             </button>
           )}
-          
+
           <button
             type="submit"
             className="px-4 py-2 bg-[#FC8019] text-white rounded-md hover:bg-[#e67016] transition-colors flex items-center justify-center"

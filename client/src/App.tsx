@@ -23,9 +23,15 @@ function Router() {
       <Route path="/restaurant/:id" component={RestaurantPage} />
       <ProtectedRoute path="/checkout" component={CheckoutPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/admin/restaurant" component={RestaurantDashboard} />
+      <ProtectedRoute
+        path="/admin/restaurant"
+        component={RestaurantDashboard}
+      />
       <ProtectedRoute path="/admin/menu" component={MenuManagement} />
-      <ProtectedRoute path="/delivery/dashboard" component={DeliveryDashboard} />
+      <ProtectedRoute
+        path="/delivery/dashboard"
+        component={DeliveryDashboard}
+      />
       <Route component={NotFound} />
     </Switch>
   );
