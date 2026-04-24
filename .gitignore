@@ -5,3 +5,19 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .env
+
+# Replit-specific files
+.replit
+replit.nix
+.config/
+
+# Database dumps & SQL exports
+*.dump
+*.sql
+
+# Report & documentation source files
+*.pdf
+*.tex
+
+# Test & debug scripts
+test-db.ts

@@ -1,0 +1,35 @@
+name: Sparkur CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security-and-build:
+    name: Security Audit & Build Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Immutable Dependency Install (npm ci)
+        run: npm ci
+
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit
+
+      - name: SAST - Dependency Security Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Build Validation (Vite React Build)
+        run: npm run build
