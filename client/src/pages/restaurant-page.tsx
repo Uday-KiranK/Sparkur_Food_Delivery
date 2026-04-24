@@ -147,7 +147,7 @@ const RestaurantPage = () => {
                   <div className="flex flex-col items-center border-r border-gray-700 pr-4 last:border-0">
                     <div className="flex items-center bg-[#48c479] px-1 rounded">
                       <i className="bi bi-star-fill text-xs mr-1"></i>
-                      <span>{restaurant.rating.toFixed(1)}</span>
+                      <span>{(restaurant.rating ?? 0).toFixed(1)}</span>
                     </div>
                     <span className="text-xs mt-1 text-gray-400">Ratings</span>
                   </div>
