@@ -70,3 +70,6 @@ graph TD
     I --> J[Delivery Partner Picks Up]
     J --> K[Delivered]
     end
+
+    Copyright Sparkure Team
+    @2026
